@@ -2,6 +2,12 @@ local composer = require( "composer" )
 local scene = composer.newScene()
 local mte = require("MTE.mte").createMTE()
 
+<<<<<<< HEAD
+=======
+-- load the physics data:
+local physicsData = (require "physicsData").physicsData(1)
+
+>>>>>>> origin/master
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX
 
@@ -32,26 +38,43 @@ soundTable = {
 -- PLAYER 1: --------------------
 local loadplayer1 = function ()
     
+<<<<<<< HEAD
 	local spriteSheet = graphics.newImageSheet("sprites/player1_gun.png", {width = 48, height = 48, numFrames = 1})
 	local sequenceData = {		
 		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
 		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
 		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
 		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
+=======
+	local spriteSheet = graphics.newImageSheet("sprites/player1_gun_sprite.png", {width = 48, height = 48, numFrames = 16})
+	local sequenceData = {		
+		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
+		{name = "down", sheet = spriteSheet, frames = {2}, time = 400},
+		{name = "left", sheet = spriteSheet, frames = {3}, time = 400},
+		{name = "up", sheet = spriteSheet, frames = {4}, time = 400}
+>>>>>>> origin/master
 	}
 	local player1 = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
+<<<<<<< HEAD
 		layer = 3, 
 		locX = 15,
 		locY = 10,
+=======
+		layer =  3, 
+>>>>>>> origin/master
 		levelWidth = 48,
 		levelHeight = 48
 	}
 	mte.physics.addBody( player1, "dynamic" )
 	mte.addSprite(player1, setup)
+<<<<<<< HEAD
 	mte.setCameraFocus(player1)
 	player1:setSequence("up")
+=======
+	--mte.setCameraFocus(player1)
+>>>>>>> origin/master
 	return player1
 end
 --[[
@@ -111,6 +134,7 @@ function touchFunction(e)
 	
 	if eventName == "began" or eventName == "moved" then
 		if direction == "up" then 
+<<<<<<< HEAD
 			yAxis = -6
 			xAxis = 0
 			player1.rotation = 0
@@ -147,6 +171,19 @@ function RotationFunction(e)
 			player1.rotation = 90
 		elseif direction == "left" then
 			player1.rotation = -90
+=======
+			yAxis = -3
+			xAxis = 0
+		elseif direction == "down" then 
+			yAxis = 3
+			xAxis = 0
+		elseif direction == "right" then
+			xAxis = 3
+			yAxis = 0
+		elseif direction == "left" then
+			xAxis = -3
+			yAxis = 0
+>>>>>>> origin/master
 		end
 	else 
 		yAxis = 0
@@ -166,6 +203,10 @@ function scene:create( event )
 	mte.physics.start()
 	mte.physics.setGravity(0,0)
 	--mte.physics.setDrawMode("hybrid")
+<<<<<<< HEAD
+=======
+	--mte.physics.pause()
+>>>>>>> origin/master
 
 	-- LOAD MAP: ----------------------------------------------------------
 	mte.toggleWorldWrapX(false)
@@ -189,6 +230,7 @@ function scene:create( event )
 	player3.name = player3Name
 	]]--
 
+<<<<<<< HEAD
 	-- INSERT LEFT DPAD: -------------------------------------------------------
 	local leftdpad = {}
 
@@ -258,12 +300,48 @@ function scene:create( event )
 	rightdpad[4].height = 31
 	rightdpad[4].myName = "right"
 
+=======
+	-- INSERT DPAD: -------------------------------------------------------
+	local buttons = {}
+
+	buttons[1] = display.newImage("sprites/button.png")
+	buttons[1].x = 10
+	buttons[1].y = 245
+	buttons[1].width = 45
+	buttons[1].height = 31
+	buttons[1].myName = "up"
+	buttons[1].rotation = -90
+
+	buttons[2] = display.newImage("sprites/button.png")
+	buttons[2].x = 10
+	buttons[2].y = 291
+	buttons[2].width = 45
+	buttons[2].height = 31
+	buttons[2].myName = "down"
+	buttons[2].rotation = 90
+
+	buttons[3] = display.newImage("sprites/button.png")
+	buttons[3].x = -12
+	buttons[3].y = 268,5
+	buttons[3].width = 45
+	buttons[3].height = 31
+	buttons[3].myName = "left"
+	buttons[3].rotation = 180
+
+	buttons[4] = display.newImage("sprites/button.png")
+	buttons[4].x = 32
+	buttons[4].y = 268,5
+	buttons[4].width = 45
+	buttons[4].height = 31
+	buttons[4].myName = "right"
+>>>>>>> origin/master
 
 	--all display objects must be inserted into group
 	sceneGroup:insert( map )
 	--sceneGroup:insert( player1 )
 	--sceneGroup:insert( player2 )
 	--sceneGroup:insert( player3 )
+<<<<<<< HEAD
 	sceneGroup:insert( leftdpad[1] )
 	sceneGroup:insert( leftdpad[2] )
 	sceneGroup:insert( leftdpad[3] )
@@ -273,6 +351,37 @@ function scene:create( event )
 	sceneGroup:insert( rightdpad[3] )
 	sceneGroup:insert( rightdpad[4] )
 
+=======
+	sceneGroup:insert( buttons[1] )
+	sceneGroup:insert( buttons[2] )
+	sceneGroup:insert( buttons[3] )
+	sceneGroup:insert( buttons[4] )
+
+--local touchFunction = function(e)
+--	local eventName = e.phase
+--	local direction = e.target.myName
+--	local currentChar = player1
+--	
+--	if eventName == "began" or eventName == "moved" then
+---		if direction == "up" then 
+--			yAxis = -3
+--			xAxis = 0
+--		elseif direction == "down" then 
+--			yAxis = 3
+--			xAxis = 0
+--		elseif direction == "right" then
+--			xAxis = 3
+--			yAxis = 0
+--		elseif direction == "left" then
+---			xAxis = -3
+	--		yAxis = 0
+	--	end
+	--else 
+--		yAxis = 0
+--		xAxis = 0
+--	end
+--end
+>>>>>>> origin/master
 
 local j=1
 
@@ -280,10 +389,13 @@ for j=1, #leftdpad do
 	leftdpad[j]:addEventListener("touch", touchFunction)
 end
 
+<<<<<<< HEAD
 for j=1, #rightdpad do 
 	rightdpad[j]:addEventListener("touch", RotationFunction)
 end
 
+=======
+>>>>>>> origin/master
 end
 
 function scene:show( event )
