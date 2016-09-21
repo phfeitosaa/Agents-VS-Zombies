@@ -10,6 +10,11 @@ local scene = composer.newScene()
 -- include Corona's "widget" library
 local widget = require "widget"
 
+-- Load the music of the game:
+soundTable = {
+	backgroundsnd = audio.loadStream( "sounds/backmenu.ogg" ),
+}
+
 --------------------------------------------
 
 -- forward declarations and other locals
@@ -65,6 +70,7 @@ function scene:show( event )
 		-- 
 		-- INSERT code here to make the scene come alive
 		-- e.g. start timers, begin animation, play audio, etc.
+		audio.play( soundTable["backgroundsnd"], {loops=-1})
 	end	
 end
 
@@ -78,7 +84,8 @@ function scene:hide( event )
 		-- INSERT code here to pause the scene
 		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
-		-- Called when the scene is now off screen
+		audio.fadeOut( { time=5000 } )
+		audio.stop(backgroundsnd)
 	end	
 end
 
@@ -89,10 +96,12 @@ function scene:destroy( event )
 	-- 
 	-- INSERT code here to cleanup the scene
 	-- e.g. remove display objects, remove touch listeners, save state, etc.
-	
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
+		audio.fadeOut( { time=5000 } )
+		audio.pause(backgroundsnd)
+
 	end
 end
 
