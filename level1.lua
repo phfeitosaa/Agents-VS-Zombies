@@ -10,14 +10,21 @@ display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
 system.activate("multitouch")
 
+<<<<<<< HEAD
 -- variavel para inserir os inimigos:
 local enemies = display.newGroup()
+=======
+-- player and zombies declarations:
+local player1, player2, player3, zombies
+local yAxis, xAxis = 0, 0
+>>>>>>> origin/master
 
 -- player declarations:
 local player1, player2, player3
 local yAxis, xAxis = 0, 0
 local currentChar
 
+<<<<<<< HEAD
 -- global variables:
 local gameActive = true
 local waveProgress = 1
@@ -40,6 +47,8 @@ local gameOver
 local nextWave
 local checkforProgress
 
+=======
+>>>>>>> origin/master
 -- collision names:
 local player1Name = "player1"
 local player2Name = "player2"
@@ -52,9 +61,13 @@ local rightdpad = {}
 
 -- Load the music of the game:
 soundTable = {
+<<<<<<< HEAD
 	backgroundsnd = audio.loadStream( "sounds/dark_fallout.ogg" ),
 	shot = audio.loadSound ("sounds/pistol.wav"),
 	wavesnd = audio.loadSound ("sounds/wave.mp3")
+=======
+	music = audio.loadStream( "sounds/dark_fallout.ogg" )
+>>>>>>> origin/master
 }
 
 -- Functions to setup chars and the zombie:
@@ -211,6 +224,7 @@ function test(e)
 	print("eita")
 end
 
+<<<<<<< HEAD
 -- Create shot: -------------------------------------------------------------------------
 function shoot(e)
 	local eventName = e.phase
@@ -323,6 +337,8 @@ local function checkforProgress()
 	end
 end
 
+=======
+>>>>>>> origin/master
 function scene:create( event )
 	local sceneGroup = self.view
 
@@ -337,7 +353,11 @@ function scene:create( event )
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("levels/level1.tmx") 
 	mte.drawObjects()
+<<<<<<< HEAD
 	map = mte.setCamera({levelPosX = 0, levelPosY = 0, blockScale = 30})
+=======
+	map = mte.setCamera({levelPosX = 0, levelPosY = 0, blockScale = 40})
+>>>>>>> origin/master
 	mte.constrainCamera()
 
 	-- LOAD UI: -----------------------------------------------------------
@@ -347,6 +367,7 @@ function scene:create( event )
 
 	-- LOAD CHARS: --------------------------------------------------------
 	player1 = loadplayer1()
+<<<<<<< HEAD
 	player1.myName = player1Name
 	--player1.collision = test
 	--player1:addEventListener("collision")
@@ -365,6 +386,12 @@ function scene:create( event )
 		enemies:insert(enemyArray[i] )		
 	end
 		
+=======
+	player1.name = player1Name
+	player1.collision = test
+	player1:addEventListener("collision")
+	
+>>>>>>> origin/master
 	--[[
 	player2 = loadplayer2()
 	player2.name = player2Name
@@ -374,6 +401,10 @@ function scene:create( event )
 	]]--
 
 	-- INSERT LEFT DPAD: -------------------------------------------------------
+<<<<<<< HEAD
+=======
+	local leftdpad = {}
+>>>>>>> origin/master
 
 	leftdpad[1] = display.newImage("sprites/button.png")
 	leftdpad[1].x = 10
@@ -408,6 +439,10 @@ function scene:create( event )
 
 
 	-- INSERT RIGHT DPAD: -------------------------------------------------------
+<<<<<<< HEAD
+=======
+	local rightdpad = {}
+>>>>>>> origin/master
 
 	rightdpad[1] = display.newImage("sprites/button.png")
 	rightdpad[1].x = 460
@@ -446,9 +481,12 @@ function scene:create( event )
 	--sceneGroup:insert( player1 )
 	--sceneGroup:insert( player2 )
 	--sceneGroup:insert( player3 )
+<<<<<<< HEAD
 	for i=1,20 do
 		sceneGroup:insert( enemyArray[i] )	
 	end
+=======
+>>>>>>> origin/master
 	sceneGroup:insert( leftdpad[1] )
 	sceneGroup:insert( leftdpad[2] )
 	sceneGroup:insert( leftdpad[3] )
@@ -469,13 +507,19 @@ for j=1, #rightdpad do
 	rightdpad[j]:addEventListener("touch", RotationFunction)
 end
 
+<<<<<<< HEAD
 for j=1, #rightdpad do 
 	rightdpad[j]:addEventListener("touch", shoot)
+=======
+>>>>>>> origin/master
 end
 	
 
+<<<<<<< HEAD
 end
 
+=======
+>>>>>>> origin/master
 function scene:show( event )
 	local sceneGroup = self.view
 	local phase = event.phase
@@ -486,7 +530,11 @@ function scene:show( event )
 		-- Called when the scene is now on screen 
 		-- e.g. start timers, begin animation, play audio, etc.
 		mte.physics.start()
+<<<<<<< HEAD
 		audio.play( soundTable["backgroundsnd"], {loops=-1})
+=======
+		audio.play( soundTable["music"], {loops=-1})
+>>>>>>> origin/master
 	end
 end
 
@@ -535,7 +583,10 @@ scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
 Runtime:addEventListener( "enterFrame", update )
+<<<<<<< HEAD
 Runtime:addEventListener( "collision" , onCollision)
+=======
+>>>>>>> origin/master
 
 -----------------------------------------------------------------------------------------
 
