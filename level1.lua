@@ -1,26 +1,22 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 local mte = require("MTE.mte").createMTE()
+local StickLib   = require("joystick.lib_analog_stick")
 
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX
+local Text = display.newText( " ", screenW*.6, screenH-20, native.systemFont, 15 )
+local posX = display.contentWidth/2
+local posY = display.contentHeight/2
 
 display.setStatusBar( display.HiddenStatusBar )
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
 system.activate("multitouch")
 
--- variavel para inserir os inimigos:
+-- variavel para inserir os inimigos e o player:
 local enemies = display.newGroup()
-
--- player and zombies declarations:
-local player1, player2, player3, zombies
-local yAxis, xAxis = 0, 0
-
--- player declarations:
-local player1, player2, player3
-local yAxis, xAxis = 0, 0
-local currentChar
+local player
 
 -- global variables:
 local gameActive = true
@@ -33,6 +29,7 @@ local onCollision
 local score = 0
 local gameovertxt
 local numBullets = 20
+local numZombies = 20
 
 -- global functions
 local removeEnemies
@@ -45,25 +42,20 @@ local nextWave
 local checkforProgress
 
 -- collision names:
-local player1Name = "player1"
-local player2Name = "player2"
-local player3Name = "player3"
+local playerName = "player"
 local zombiesName = "zombies"
 
--- Left e Right DPAD:
-local leftdpad = {}
-local rightdpad = {}
 
 -- Load the music of the game:
 soundTable = {
-	backgroundsnd = audio.loadStream( "sounds/dark_fallout.ogg" ),
-	shot = audio.loadSound ("sounds/pistol.wav"),
-	wavesnd = audio.loadSound ("sounds/wave.mp3")
+	backgroundsnd = audio.loadStream( "sounds/backmusic.ogg" ),
+	shot = audio.loadSound("sounds/pistol.wav"),
+	noarmor = audio.loadSound("sounds/outofammo.wav")
 }
 
 -- Functions to setup chars and the zombie:
--- PLAYER 1: --------------------------------------------
-local loadplayer1 = function ()
+-- PLAYER 1: ------------------------------------------------------------------------------
+local loadplayer = function ()
     
 	local spriteSheet = graphics.newImageSheet("sprites/player1_gun.png", {width = 48, height = 48, numFrames = 1})
 	local sequenceData = {		
@@ -72,23 +64,22 @@ local loadplayer1 = function ()
 		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
 		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
 	}
-	local player1 = display.newSprite(spriteSheet, sequenceData)
+	local player = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
-		layer = 3, 
+		layer = 2, 
 		locX = 15,
 		locY = 10,
 		levelWidth = 48,
 		levelHeight = 48
 	}
-	mte.physics.addBody( player1, "dynamic" )
-	mte.addSprite(player1, setup)
-	mte.setCameraFocus(player1)
-	player1:setSequence("up")
-	return player1
+	mte.physics.addBody( player, "dynamic" )
+	mte.addSprite(player, setup)
+	mte.setCameraFocus(player)
+	return player
 end
 
--- ZOMBIE: -----------------------------------------------------
+-- ZOMBIE: -------------------------------------------------------------------------------
 local loadZombie = function ()
     
 	local spriteSheet = graphics.newImageSheet("sprites/zombie.png", {width = 35, height = 43, numFrames = 1})
@@ -101,118 +92,73 @@ local loadZombie = function ()
 	local zombie = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
-		layer = 3, 
-		locX = 5,
-		locY = 5,
-		levelWidth = 15,
-		levelHeight = 23
+		layer = 1,
+		locX = math.random(0, 20),
+		locY = math.random(0, 20),
+		levelWidth = 22,
+		levelHeight = 30
 	}
 	mte.physics.addBody( zombie, "dynamic" )
 	mte.addSprite(zombie, setup)
 	return zombie
 end
 
--- Função de movimentação do personagem (Analog esquerdo) --------------------------------
-function touchFunction(e)
-	local eventName = e.phase
-	local direction = e.target.myName
-	local currentChar = player1
-	
-	if eventName == "began" or eventName == "moved" then
-		if direction == "up" then 
-			yAxis = -6
-			xAxis = 0
-			player1.rotation = 0
-		elseif direction == "down" then 
-			yAxis = 6
-			xAxis = 0
-			player1.rotation = 180
-		elseif direction == "right" then
-			xAxis = 6
-			yAxis = 0
-			player1.rotation = 90
-		elseif direction == "left" then
-			xAxis = -6
-			yAxis = 0
-			player1.rotation = -90
-		end
-	else 
-		yAxis = 0
-		xAxis = 0
-	end
-end
-
--- Função de mira do personagem (Analog direito) -----------------------------------------
-function RotationFunction(e)
-	local eventName = e.phase
-	local direction = e.target.myName
-	local currentChar = player1
-	
-	if eventName == "began" or eventName == "moved" then
-		if direction == "up" then 
-			player1.rotation = 0
-		elseif direction == "down" then 
-			player1.rotation = 180
-		elseif direction == "right" then
-			player1.rotation = 90
-		elseif direction == "left" then
-			player1.rotation = -90
-		end
-	else 
-		yAxis = 0
-		xAxis = 0
-	end
-end
-
 -- Create shot: -------------------------------------------------------------------------
-function shoot(e)
-	local eventName = e.phase
-	local direction = e.target.myName
-	local currentChar = player1
-		
-	if eventName == "began" or eventName == "moved" then	
-		if (numBullets ~= 0) then
-			--numBullets = numBullets - 1
-			local bullet = display.newImage("sprites/bullet.png")
-			physics.addBody(bullet, "static", {density = 1, friction = 0, bounce = 0});
-			bullet.xScale = 0.5
-			bullet.yScale = 0.5 
-			bullet.myName = "bullet"
-			textBullets.text = "Bullets "..numBullets
+function shoot()
+	if (numBullets ~= 0) then
+		timer.performWithDelay(1000)
+		audio.play(soundTable["shot"])
+		--numBullets = numBullets - 1
+		local bullet = display.newImage("sprites/bullet.png")
+		physics.addBody(bullet, "static", {density = 1, friction = 0, bounce = 0});
+		bullet.xScale = 0.5
+		bullet.yScale = 0.5 
+		bullet.myName = "bullet"
+		textBullets.text = "Bullets "..numBullets
+	else
+		audio.play(soundTable["noarmor"])
+	end 
 
-			startlocationX = currentChar.x
-			startlocationY = currentChar.y
+end
 
-			if (currentChar.rotation == 0) then
-				bullet.rotation = 0
-				bullet.x = screenW/2-40 
-				bullet.y = screenH/2-60
-				transition.to ( bullet, { time = 1000, x = screenW/2-40, y = screenH-700} )
-			elseif (currentChar.rotation == 180) then
-				bullet.rotation = 180
-				bullet.x = screenW/2-48 
-				bullet.y = screenH/2+60
-				transition.to ( bullet, { time = 1000, x = screenW/2-48, y = screenH+500} )
-			elseif (currentChar.rotation == 90) then
-				bullet.rotation = 90
-				bullet.x = screenW/2+10
-				bullet.y = screenH/2+5
-				transition.to ( bullet, { time = 1000, x = screenW+200, y = screenH/2+5} )
-			elseif (currentChar.rotation == -90) then
-				bullet.rotation = -90
-				bullet.x = screenW/2-100 
-				bullet.y = screenH/2-5
-				transition.to ( bullet, { time = 1000, x = -300, y = screenH/2-5} )
-			end
-			audio.play(soundTable["shot"])
+-- 
+function LeftStick( event )
+	
+	-- MOVE THE CHAR:
+    LeftStick:move(player, 5, false) -- se a opção for true o objeto se move com o joystick
 
-		end 
+    -- -- SHOW STICK INFO
+    -- Text.text = "ANGLE = "..LeftStick:getAngle().."   DIST = "..math.ceil(LeftStick:getDistance()).."   PERCENT = "..math.ceil(LeftStick:getPercent()*100).."%"
+	
+	print("LeftStick:getAngle = "..LeftStick:getAngle())
+	print("LeftStick:getDistance = "..LeftStick:getDistance())
+	-- print("LeftStick:getPercent = "..LeftStick:getPercent()*100)
+	print("POSICAO X / Y  " ..player.x,player.y)
+	
+	angle = LeftStick:getAngle() 
+	moving = LeftStick:getMoving()
+	
+	--If the analog stick is moving, animate the sprite
+	if(moving) then 
+		player:play() 
 	end
+end
+
+function RightStick( event )
+
+	distance = RightStick:getDistance()
+
+	RightStick:rotate(player, true)
+	if(distance >= 16) then
+		--shoot()
+		print("fire!")
+	end
+
 end
 
 -- Collision: ---------------------------------------------------------------------------
 function onCollision(event)
-	currentChar = player1
+	player = player
  
 	if((event.object1.myName=="zombies" and event.object2.myName=="bullet") or 
 		(event.object1.myName=="bullet" and event.object2.myName=="zombies")) then
@@ -291,8 +237,7 @@ function scene:create( event )
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("levels/level1.tmx") 
 	mte.drawObjects()
-	map = mte.setCamera({levelPosX = 0, levelPosY = 0, blockScale = 30})
-	map = mte.setCamera({levelPosX = 0, levelPosY = 0, blockScale = 40})
+	map = mte.setCamera({levelPosX = halfW, levelPosY = halfH, blockScale = 40})
 	mte.constrainCamera()
 
 	-- LOAD UI: -----------------------------------------------------------
@@ -300,130 +245,69 @@ function scene:create( event )
 	textWave = display.newText ("Level: "..waveProgress, 10, 30, nil, 12)
 	textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
 
-	-- LOAD CHARS: --------------------------------------------------------
-	player1 = loadplayer1()
-	player1.myName = player1Name
-	--player1:addEventListener("collision")
+	-- LOAD PLAYER: --------------------------------------------------------
+	player = loadplayer()
+	player.myName = playerName
+
+	-- LOAD JOYSTICKS: -----------------------------------------------------
+	local localGroup = display.newGroup() -- remember this for farther down in the code
+	 	motionx = 0; -- Variable used to move character along x axis
+	 	motiony = 0; -- Variable used to move character along y axis
+	 	speed = 2; -- Set Walking Speed 
+
+	-- CREATE RIGHT ANALOG STICK
+	LeftStick = StickLib.NewLeftStick( 
+        {
+        x             = 30,
+        y             = 250,
+        thumbSize     = 5,
+        borderSize    = 32, 
+        snapBackSpeed = .2, 
+        R             = 25,
+        G             = 255,
+        B             = 255
+        } )
+	
+	RightStick = StickLib.NewRightStick( 
+        {
+        x             = 450,
+        y             = 250,
+        thumbSize     = 5,
+        borderSize    = 32, 
+        snapBackSpeed = .2, 
+        R             = 25,
+        G             = 255,
+        B             = 255
+        } )	
 
 	-- LOAD ZOMBIES: ------------------------------------------------------
+	--[[
 	enemies:toFront()
-	for i=1,20 do
+	for i=1,numZombies do
 		enemyArray[i] = loadZombie()
 		enemyArray[i].myName = zombiesName
-		startlocationX = math.random (0, player1.x + 10)
-		enemyArray[i].x = startlocationX
-		startlocationY = math.random (0, player1.y + 10)
-		enemyArray[i].y = startlocationY
 
-		transition.to ( enemyArray[i] , { time = math.random (12000, 20000), x= math.random (0, display.contentWidth ), y=player1.y-500 } )
+		--transitionTo()
+		--mte.moveSpriteTo({sprite = enemyArray[i], locX = player.x, locY = player.y, time = 30, transition = easing.inQuad})
 		enemies:insert(enemyArray[i] )		
 	end
-
-	-- INSERT LEFT DPAD: -------------------------------------------------------
-	local leftdpad = {}
-
-	leftdpad[1] = display.newImage("sprites/button.png")
-	leftdpad[1].x = 10
-	leftdpad[1].y = 245
-	leftdpad[1].width = 45
-	leftdpad[1].height = 31
-	leftdpad[1].myName = "up"
-	leftdpad[1].rotation = -90
-
-	leftdpad[2] = display.newImage("sprites/button.png")
-	leftdpad[2].x = 10
-	leftdpad[2].y = 291
-	leftdpad[2].width = 45
-	leftdpad[2].height = 31
-	leftdpad[2].myName = "down"
-	leftdpad[2].rotation = 90
-
-	leftdpad[3] = display.newImage("sprites/button.png")
-	leftdpad[3].x = -12
-	leftdpad[3].y = 268,5
-	leftdpad[3].width = 45
-	leftdpad[3].height = 31
-	leftdpad[3].myName = "left"
-	leftdpad[3].rotation = 180
-
-	leftdpad[4] = display.newImage("sprites/button.png")
-	leftdpad[4].x = 32
-	leftdpad[4].y = 268,5
-	leftdpad[4].width = 45
-	leftdpad[4].height = 31
-	leftdpad[4].myName = "right"
-
-
-	-- INSERT RIGHT DPAD: -------------------------------------------------------
-	local rightdpad = {}
-
-	rightdpad[1] = display.newImage("sprites/button.png")
-	rightdpad[1].x = 460
-	rightdpad[1].y = 245
-	rightdpad[1].width = 45
-	rightdpad[1].height = 31
-	rightdpad[1].myName = "up"
-	rightdpad[1].rotation = -90
-
-	rightdpad[2] = display.newImage("sprites/button.png")
-	rightdpad[2].x = 460
-	rightdpad[2].y = 291
-	rightdpad[2].width = 45
-	rightdpad[2].height = 31
-	rightdpad[2].myName = "down"
-	rightdpad[2].rotation = 90
-
-	rightdpad[3] = display.newImage("sprites/button.png")
-	rightdpad[3].x = 438
-	rightdpad[3].y = 268,5
-	rightdpad[3].width = 45
-	rightdpad[3].height = 31
-	rightdpad[3].myName = "left"
-	rightdpad[3].rotation = 180
-
-	rightdpad[4] = display.newImage("sprites/button.png")
-	rightdpad[4].x = 482
-	rightdpad[4].y = 268,5
-	rightdpad[4].width = 45
-	rightdpad[4].height = 31
-	rightdpad[4].myName = "right"
-
+	]]--
 
 	--all display objects must be inserted into group
 	sceneGroup:insert( map )
-	--sceneGroup:insert( player1 )
-
-	sceneGroup:insert( leftdpad[1] )
-	sceneGroup:insert( leftdpad[2] )
-	sceneGroup:insert( leftdpad[3] )
-	sceneGroup:insert( leftdpad[4] )
-	sceneGroup:insert( rightdpad[1] )
-	sceneGroup:insert( rightdpad[2] )
-	sceneGroup:insert( rightdpad[3] )
-	sceneGroup:insert( rightdpad[4] )
-
+	sceneGroup:insert( textScore )
+	sceneGroup:insert( textWave )
+	sceneGroup:insert( textBullets )
+	sceneGroup:insert( LeftStick )
+	sceneGroup:insert( RightStick )
 	
+	--[[
 	for i=1,20 do
 		sceneGroup:insert( enemyArray[i] )	
 	end
-
-
-local j=1
-
-for j=1, #leftdpad do 
-	leftdpad[j]:addEventListener("touch", touchFunction)
+	]]--
 end
 
-for j=1, #rightdpad do 
-	rightdpad[j]:addEventListener("touch", RotationFunction)
-end
-
-for j=1, #rightdpad do 
-	rightdpad[j]:addEventListener("touch", shoot)
-end
-	
-
-end
 
 function scene:show( event )
 	local sceneGroup = self.view
@@ -436,13 +320,11 @@ function scene:show( event )
 		-- e.g. start timers, begin animation, play audio, etc.
 		mte.physics.start()
 		audio.play( soundTable["backgroundsnd"], {loops=-1})
-		audio.play( soundTable["music"], {loops=-1})
 	end
 end
 
 function scene:hide( event )
 	local sceneGroup = self.view
-	
 	local phase = event.phase
 	
 	if event.phase == "will" then
@@ -471,9 +353,6 @@ end
 
 function update()
     mte.update()
-    local currentChar = player1
-	currentChar.x = currentChar.x + xAxis
-	currentChar.y = currentChar.y + yAxis
 end
     
 
@@ -485,6 +364,8 @@ scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
 Runtime:addEventListener( "enterFrame", update )
+Runtime:addEventListener( "enterFrame", LeftStick )
+Runtime:addEventListener( "enterFrame", RightStick )
 Runtime:addEventListener( "collision" , onCollision)
 
 -----------------------------------------------------------------------------------------
