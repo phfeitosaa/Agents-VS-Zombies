@@ -69,23 +69,16 @@ function NewLeftStick( Props )
         Group.percent           = 0
         Group.maxDist           = Props.borderSize
         Group.snapBackSpeed = Props.snapBackSpeed ~= nil and Props.snapBackSpeed or .7
- 
-        -- Group.Border = display.newCircle(0,0,Props.borderSize)
 		
 		-- for use images uncomment the line down and comment line up
-		Group.Border = display.newImage("joystick/joystickmain1a.png")
-		
-        --Group.Border.strokeWidth = 2
-        --Group.Border:setFillColor  (Props.R,Props.G,Props.B,46)
-        --Group.Border:setStrokeColor(Props.R,Props.G,Props.B,255)
-        --Group.Border:setFillColor  (Props.R,Props.G,Props.B,0)
-        --Group.Border:setStrokeColor(Props.R,Props.G,Props.B,0)
+		Group.Border = display.newImage("joystick/joystickmain1a.png")	
         Group:insert(Group.Border)
 			
         -- Group.Thumb = display.newCircle(0,0,Props.thumbSize)
 		-- for use images uncomment the line down and comment line up
 		Group.Thumb = display.newImage("joystick/joystickmain1b.png") 
-        --Group.Thumb.strokeWidth = 3
+        Group.Thumb.width = 56
+        Group.Thumb.height = 57
         Group.Thumb:setFillColor  (Props.R,Props.G,Props.B,96)
         Group.Thumb:setStrokeColor(Props.R,Props.G,Props.B,255)
         Group.Thumb.x0 = 0
@@ -247,23 +240,18 @@ function NewRightStick( Props )
         Group.percent           = 0
         Group.maxDist           = Props.borderSize
         Group.snapBackSpeed = Props.snapBackSpeed ~= nil and Props.snapBackSpeed or .7
- 
-        -- Group.Border = display.newCircle(0,0,Props.borderSize)
         
         -- for use images uncomment the line down and comment line up
-        Group.Border = display.newImage("joystick/joystickmain1a.png")
-        
-        --Group.Border.strokeWidth = 2
-        --Group.Border:setFillColor  (Props.R,Props.G,Props.B,46)
-        --Group.Border:setStrokeColor(Props.R,Props.G,Props.B,255)
-        --Group.Border:setFillColor  (Props.R,Props.G,Props.B,0)
-        --Group.Border:setStrokeColor(Props.R,Props.G,Props.B,0)
+        Group.Border = display.newImage("joystick/joystickmain2a.png")
+        --Group.Border.width = 120
+        --Group.Border.height = 120
         Group:insert(Group.Border)
             
         -- Group.Thumb = display.newCircle(0,0,Props.thumbSize)
         -- for use images uncomment the line down and comment line up
         Group.Thumb = display.newImage("joystick/joystickmain2b.png") 
-        --Group.Thumb.strokeWidth = 3
+        Group.Thumb.width = 56
+        Group.Thumb.height = 57
         Group.Thumb:setFillColor  (Props.R,Props.G,Props.B,96)
         Group.Thumb:setStrokeColor(Props.R,Props.G,Props.B,255)
         Group.Thumb.x0 = 0

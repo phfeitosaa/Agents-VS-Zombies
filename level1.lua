@@ -258,8 +258,8 @@ function scene:create( event )
 	-- CREATE RIGHT ANALOG STICK
 	LeftStick = StickLib.NewLeftStick( 
         {
-        x             = 30,
-        y             = 250,
+        x             = 17,
+        y             = 260,
         thumbSize     = 5,
         borderSize    = 32, 
         snapBackSpeed = .2, 
@@ -270,8 +270,8 @@ function scene:create( event )
 	
 	RightStick = StickLib.NewRightStick( 
         {
-        x             = 450,
-        y             = 250,
+        x             = 465,
+        y             = 260,
         thumbSize     = 5,
         borderSize    = 32, 
         snapBackSpeed = .2, 
@@ -317,9 +317,11 @@ function scene:show( event )
 		-- Called when the scene is still off screen and is about to move on screen
 	elseif phase == "did" then
 		-- Called when the scene is now on screen 
-		-- e.g. start timers, begin animation, play audio, etc.
+
 		mte.physics.start()
 		audio.play( soundTable["backgroundsnd"], {loops=-1})
+
+		-- e.g. start timers, begin animation, play audio, etc.
 	end
 end
 
@@ -329,10 +331,10 @@ function scene:hide( event )
 	
 	if event.phase == "will" then
 		-- Called when the scene is on screen and is about to move off screen
-		--
-		-- INSERT code here to pause the scene
-		-- e.g. stop timers, stop animation, unload sounds, etc.)
+
 		mte.physics.stop()
+
+		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
 		-- Called when the scene is now off screen
 	end	

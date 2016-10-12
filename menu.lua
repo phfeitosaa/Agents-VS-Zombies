@@ -12,7 +12,7 @@ local widget = require "widget"
 
 -- Load the music of the game:
 soundTable = {
-	backgroundsnd = audio.loadStream( "sounds/backmenu.ogg" ),
+	backgroundsnd = audio.loadStream( "sounds/backmenu.mp3" ),
 }
 
 --------------------------------------------
@@ -79,13 +79,13 @@ function scene:hide( event )
 	local phase = event.phase
 	
 	if event.phase == "will" then
+
 		-- Called when the scene is on screen and is about to move off screen
-		--
-		-- INSERT code here to pause the scene
 		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
-		audio.fadeOut( { time=5000 } )
+		audio.fadeOut( { time=500 } )
 		audio.stop(backgroundsnd)
+
 	end	
 end
 
@@ -99,9 +99,6 @@ function scene:destroy( event )
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
-		audio.fadeOut( { time=5000 } )
-		audio.pause(backgroundsnd)
-
 	end
 end
 
