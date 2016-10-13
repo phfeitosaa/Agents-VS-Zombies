@@ -1,4 +1,4 @@
-<h3>Agents VS Zombies</h3>
+ <h3>Agents VS Zombies</h3>
 
 <h5>Jogo mobile desenvolvido utilizando a plataforma Corona SDK.</h5>
 <br>
@@ -6,7 +6,7 @@ Fontes:
 
 - Assets, sprites e efeitos sonoros baixados em:
 
-http://kenney.nl/
+http://kenney.nl/<br>
 http://opengameart.org/
 
 - Biblioteca utilizada para implementar o joystick:
