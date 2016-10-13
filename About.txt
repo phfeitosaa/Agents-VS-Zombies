@@ -1,2 +1,0 @@
-Biblioteca utilizada para implementar o joystick:
-https://github.com/dantes2023/virtual-joystick-with-example
