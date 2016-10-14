@@ -42,19 +42,15 @@ local player
 local gameActive = true
 local waveProgress = 1
 local numHit = 0
-local shootbtn
-local numEnemy = 0
-local enemyArray = {}
-local onCollision
 local score = 0
-local gameovertxt
 local numBullets = 20
 local numZombies = 20
 
-local sqWidth = 16 -- OBS: Mesmo valor do blockscale
-local sqHeight = 16 -- OBS: Mesmo valor do blockscale
+local sqWidth = 40 -- OBS: Mesmo valor do blockscale
+local sqHeight = 40 -- OBS: Mesmo valor do blockscale
 
 -- funções globais:
+local onCollision
 local shoot
 local goMapping
 
@@ -198,7 +194,7 @@ local loadplayer = function ()
 	local setup = {
 		kind = "sprite", 
 		layer = 2, 
-		locX = 15,
+		locX = 17,
 		locY = 10,
 		levelWidth = 48,
 		levelHeight = 48
@@ -223,8 +219,8 @@ local loadZombie = function ()
 	local setup = {
 		kind = "sprite", 
 		layer = 2,
-		locX = 30,
-		locY = 5,
+		locX = mRandom(0,35),
+		locY = 1,
 		levelWidth = 38,
 		levelHeight = 46
 	}
@@ -281,6 +277,8 @@ function RightStick( event )
 	end
 
 end
+
+
 
 --==============================================================
 -- Função de atirar:
@@ -367,9 +365,8 @@ function scene:create( event )
 	-- CARREGAR ZUMBIS:
 	--=======================================
 
-	zombie = loadZombie()
-	zombie.myName = zombiesName
-	--timer.performWithDelay ( 500, makeZombies, 5 )
+	--zombie = loadZombie()
+	timer.performWithDelay ( mRandom(500,1000), loadZombie, numZombies )
 
 	--=======================================
 	-- CARREGAR JOYSTICK:
