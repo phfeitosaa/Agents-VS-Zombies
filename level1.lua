@@ -44,10 +44,10 @@ local waveProgress = 1
 local numHit = 0
 local score = 0
 local numBullets = 20
-local numZombies = 20
+local numZombies = 60
 
-local sqWidth = 40 -- OBS: Mesmo valor do blockscale
-local sqHeight = 40 -- OBS: Mesmo valor do blockscale
+local sqWidth = 62 -- OBS: Mesmo valor do blockscale
+local sqHeight = 62 -- OBS: Mesmo valor do blockscale
 
 -- funções globais:
 local onCollision
@@ -100,7 +100,7 @@ local map = {
 local walkable = 0
 	
 local grid = Grid(map)
-local pather = Pathfinder(grid, 'JPS', walkable)
+pather = Pathfinder(grid, 'ASTAR', walkable)
 local mode = "DIAGONAL" -- DIAGONAL  ORTHOGONAL
 pather:setMode(mode)
 
@@ -132,6 +132,10 @@ end
 --==============================================================
 
 local function followPath(obj)
+
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
 	if obj.idx < #obj.myPath + 1 then
 		-- if goal has moved, find the new path
 		if obj.targetX ~= player.xGrid or obj.targetY ~= player.yGrid then
@@ -154,6 +158,10 @@ end
 --==============================================================
 
 function goMapping(obj, startPos, endPos)
+	
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
 	local sx,sy = startPos.x, startPos.y
 	local ex,ey = endPos.x, endPos.y
 	
@@ -219,7 +227,7 @@ local loadZombie = function ()
 	local setup = {
 		kind = "sprite", 
 		layer = 2,
-		locX = mRandom(0,35),
+		locX = mRandom(1,32),
 		locY = 1,
 		levelWidth = 38,
 		levelHeight = 46
@@ -230,18 +238,20 @@ local loadZombie = function ()
 end
 
 local function makeZombies()
-	local xGrid = mRandom(1,30)
-	local yGrid = mRandom(1,30)
-	local zumbi = display.newImage("sprites/zombie.png")
 
-	local pos = pixelXYFromGridXY(xGrid,yGrid)
-	zumbi.x = pos.x
-	zumbi.y = pos.y
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
+	local zumbi = loadZombie()
+	local xGrid = zumbi.locX
+	local yGrid = zumbi.locY
+
 	zumbi.speed = mRandom(300, 500)
 	goMapping(zumbi, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
-	if #zumbi.myPath > 0 then
-		followPath(zumbi)
-	end
+	
+	--if #zumbi.myPath > 0 then
+	followPath(zumbi)
+	--end
 end
 
 --==============================================================
@@ -306,7 +316,6 @@ end
 --=============================================================
 
 function onCollision(event)
-	player = player
  
 	if((event.object1.myName=="zombies" and event.object2.myName=="bullet") or 
 		(event.object1.myName=="bullet" and event.object2.myName=="zombies")) then
@@ -353,6 +362,7 @@ function scene:create( event )
 	textScore = display.newText("Score: "..score, 10, 10, nil, 12)
 	textWave = display.newText ("Level: "..waveProgress, 10, 30, nil, 12)
 	textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
+	textNumZombies = display.newText ("Num. Zombies: "..numZombies, 10, 70, nil, 12)
 
 	--=======================================
 	-- CARREGAR PLAYER:
@@ -366,7 +376,7 @@ function scene:create( event )
 	--=======================================
 
 	--zombie = loadZombie()
-	timer.performWithDelay ( mRandom(500,1000), loadZombie, numZombies )
+	timer.performWithDelay ( mRandom(500,1000), makeZombies, numZombies )
 
 	--=======================================
 	-- CARREGAR JOYSTICK:
@@ -413,7 +423,7 @@ function scene:create( event )
 	sceneGroup:insert( textBullets )
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
-
+	sceneGroup:insert( textNumZombies )
 	
 
 end
