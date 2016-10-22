@@ -100,8 +100,8 @@ local map = {
 local walkable = 0
 	
 local grid = Grid(map)
-pather = Pathfinder(grid, 'ASTAR', walkable)
-local mode = "ORTHOGONAL" -- DIAGONAL  ORTHOGONAL
+pather = Pathfinder(grid, 'BFS', walkable)
+local mode = "DIAGONAL" -- DIAGONAL  ORTHOGONAL
 pather:setMode(mode)
 
 --==============================================================
@@ -167,9 +167,11 @@ function goMapping(obj, startPos, endPos)
 	
 	local path = pather:getPath(sx,sy, ex,ey)
 	if path then
+		--[[
 		if mode == "DIAGONAL" then
 			path:fill()
 		end
+		]]
 		obj.targetX = player.xGrid
 		obj.targetY = player.yGrid
 		local pNodes = path:nodes()
@@ -262,10 +264,10 @@ function LeftStick( event )
 	
     LeftStick:move(player, 5, false) -- se a opção for true o objeto se move com o joystick
 	
-	print("LeftStick:getAngle = "..LeftStick:getAngle())
-	print("LeftStick:getDistance = "..LeftStick:getDistance())
-	-- print("LeftStick:getPercent = "..LeftStick:getPercent()*100)
-	print("POSICAO X / Y  " ..player.x,player.y)
+	--print("LeftStick:getAngle = "..LeftStick:getAngle())
+	--print("LeftStick:getDistance = "..LeftStick:getDistance())
+	--print("LeftStick:getPercent = "..LeftStick:getPercent()*100)
+	--print("POSICAO X / Y  " ..player.x,player.y)
 	
 end
 
@@ -281,34 +283,35 @@ function RightStick( event )
     Text.text = "ANGLE = "..RightStick:getAngle().."   DIST = "..math.ceil(RightStick:getDistance()).."   PERCENT = "..math.ceil(RightStick:getPercent()*100).."%"
 
 	RightStick:rotate(player, true)
-	if(distance >= 16) then
-		numBullets = numBullets - 1
-		print("fire!")
-	end
-
+	RightStick:addEventListener("touch", shoot)
 end
 
+local atirar = function()
+	audio.play(soundTable["shot"])
+end
 
-
+local semBala = function()
+	audio.play(soundTable["noarmor"])
+end
 --==============================================================
 -- Função de atirar:
 --==============================================================
 
-function shoot()
-	if (numBullets ~= 0) then
-		timer.performWithDelay(1000)
-		audio.play(soundTable["shot"])
-		--numBullets = numBullets - 1
-		local bullet = display.newImage("images/sprites/bullet.png")
-		physics.addBody(bullet, "static", {density = 1, friction = 0, bounce = 0});
-		bullet.xScale = 0.5
-		bullet.yScale = 0.5 
-		bullet.myName = "bullet"
-		textBullets.text = "Bullets "..numBullets
-	else
-		audio.play(soundTable["noarmor"])
-	end 
-
+function shoot(event)
+	if event.phase == "began" then
+		if numBullets ~= 0 then
+			timer.performWithDelay(500, atirar)
+			numBullets = numBullets - 1
+			print(numBullets)
+			--local bullet = display.newImage("images/sprites/bullet.png")
+			--physics.addBody(bullet, "static", {density = 1, friction = 0, bounce = 0});
+			--bullet.xScale = 0.5
+			--bullet.yScale = 0.5 
+			--bullet.myName = "bullet"
+		elseif numBullets == 0 then
+			timer.performWithDelay(500, semBala)
+		end
+	end
 end
 
 --=============================================================
@@ -382,10 +385,10 @@ function scene:create( event )
 	-- CARREGAR JOYSTICK:
 	--=======================================
 
-	local localGroup = display.newGroup()
-	 	motionx = 0;
-	 	motiony = 0;
-	 	speed = 2;
+	--local localGroup = display.newGroup()
+	-- 	motionx = 0;
+	-- 	motiony = 0;
+	-- 	speed = 2;
 
 	-- CRIAR O ANALÓGICO ESQUERDO:
 	LeftStick = StickLib.NewLeftStick( 
@@ -412,6 +415,10 @@ function scene:create( event )
         G             = 255,
         B             = 255
         } )	
+
+	--local circShoot = display.newCircle(465, 260, 50, 50)
+	--circShoot:setFillColor( 0, 0, 0 )
+	--circShoot:addEventListener ( "touch", shoot )
 
 	--========================================
 	-- INSERINDO ELEMENTOS NO GRUPO:
