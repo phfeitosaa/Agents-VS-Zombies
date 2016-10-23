@@ -1,20 +1,27 @@
+display.setStatusBar( display.HiddenStatusBar )
+display.setDefault( "magTextureFilter", "nearest" )
+display.setDefault( "minTextureFilter", "nearest" )
+system.activate("multitouch")
+
 local composer = require( "composer" )
 local scene = composer.newScene()
 
 -- Importando a biblioteca MTE:
-local mte = require("libs.MTE.mte").createMTE()
+mte = require("libs.MTE.mte").createMTE()
 
 -- Importando a biblioteca dos joysticks:
-local StickLib   = require("libs.lib_analog_stick")
+local StickLib = require("libs.lib_analog_stick")
 
 -- Importando a biblioteca do pathfinder:
 local Grid = require ("libs.jumper.grid")
 local Pathfinder = require ("libs.jumper.pathfinder")
 
-display.setStatusBar( display.HiddenStatusBar )
-display.setDefault( "magTextureFilter", "nearest" )
-display.setDefault( "minTextureFilter", "nearest" )
-system.activate("multitouch")
+-- Importando arquivos necessários pro jogo:
+local sounds = require('libs.sounds')
+local loader = require("classes.loader")
+
+local shoot
+local goMapping
 
 -- Declaração de variaveis locais da tela e posições iniciais:
 local screenW, screenH = display.actualContentWidth, display.actualContentHeight
@@ -31,39 +38,25 @@ local screenTop = display.screenOriginY
 local screenHeight = display.contentHeight - screenTop * 2
 local screenBottom = screenTop + screenHeight
 
-local mRandom = math.random
-local mFloor = math.floor
-
--- variavel para inserir os inimigos e o player:
-local enemies = display.newGroup()
 local player
 
 -- Variaveis globais:
-local gameActive = true
-local waveProgress = 1
-local numHit = 0
-local score = 0
-local numBullets = 20
-local numZombies = 60
+mRandom = math.random
+mFloor = math.floor
+gameActive = true
+waveProgress = 1
+numHit = 0
+score = 0
+numBullets = 20
+numZombies = 60
 
 local sqWidth = 62 -- OBS: Mesmo valor do blockscale
 local sqHeight = 62 -- OBS: Mesmo valor do blockscale
 
--- funções globais:
-local onCollision
-local shoot
-local goMapping
-
 -- nomes das colisões:
 local playerName = "player"
 local zombiesName = "zombies"
-
--- Carregando as musicas e efeitos sonoros:
-soundTable = {
-	backgroundsnd = audio.loadStream( "sounds/backmusic.ogg" ),
-	shot = audio.loadSound("sounds/pistol.wav"),
-	noarmor = audio.loadSound("sounds/outofammo.wav")
-}
+local BulletsName = "bullets"
 
 
 -- Mapa da fase usada no pathfinder:
@@ -79,12 +72,12 @@ local map = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 4, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -186,73 +179,21 @@ function goMapping(obj, startPos, endPos)
 	end  
 end
 
---==============================================================
--- Carregar o player e o zumbi:
---==============================================================
-
--- PLAYER:
-local loadplayer = function ()
-    
-	local spriteSheet = graphics.newImageSheet("images/sprites/player1_gun.png", {width = 48, height = 48, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
-	local player = display.newSprite(spriteSheet, sequenceData)
-	local setup = {
-		kind = "sprite", 
-		layer = 2, 
-		locX = 17,
-		locY = 10,
-		levelWidth = 48,
-		levelHeight = 48
-	}
-	mte.physics.addBody( player, "dynamic" )
-	mte.addSprite(player, setup)
-	mte.setCameraFocus(player)
-	return player
-end
-
--- ZUMBI:
-local loadZombie = function ()
-    
-	local spriteSheet = graphics.newImageSheet("images/sprites/zombie.png", {width = 35, height = 43, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
-	local zombie = display.newSprite(spriteSheet, sequenceData)
-	local setup = {
-		kind = "sprite", 
-		layer = 2,
-		locX = mRandom(1,32),
-		locY = 1,
-		levelWidth = 38,
-		levelHeight = 46
-	}
-	mte.physics.addBody( zombie, "dynamic" )
-	mte.addSprite(zombie, setup)
-	return zombie
-end
 
 local function makeZombies()
 
 	player.xGrid = player.locX
 	player.yGrid = player.locY
 
-	local zumbi = loadZombie()
-	local xGrid = zumbi.locX
-	local yGrid = zumbi.locY
+	local zombie = loader.newZombie()
+	local xGrid = zombie.locX
+	local yGrid = zombie.locY
 
-	zumbi.speed = mRandom(300, 500)
-	goMapping(zumbi, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
+	zombie.speed = mRandom(300, 500)
+	goMapping(zombie, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
-	--if #zumbi.myPath > 0 then
-	followPath(zumbi)
+	--if #zombie.myPath > 0 then
+	followPath(zombie)
 	--end
 end
 
@@ -286,13 +227,7 @@ function RightStick( event )
 	RightStick:addEventListener("touch", shoot)
 end
 
-local atirar = function()
-	audio.play(soundTable["shot"])
-end
 
-local semBala = function()
-	audio.play(soundTable["noarmor"])
-end
 --==============================================================
 -- Função de atirar:
 --==============================================================
@@ -300,7 +235,7 @@ end
 function shoot(event)
 	if event.phase == "began" then
 		if numBullets ~= 0 then
-			timer.performWithDelay(500, atirar)
+			timer.performWithDelay(500, sounds.atirar)
 			numBullets = numBullets - 1
 			print(numBullets)
 			--local bullet = display.newImage("images/sprites/bullet.png")
@@ -309,27 +244,8 @@ function shoot(event)
 			--bullet.yScale = 0.5 
 			--bullet.myName = "bullet"
 		elseif numBullets == 0 then
-			timer.performWithDelay(500, semBala)
+			timer.performWithDelay(500, sounds.semBala)
 		end
-	end
-end
-
---=============================================================
--- COLISÃO ENTRE OS ZUMBIS E AS BALAS:
---=============================================================
-
-function onCollision(event)
- 
-	if((event.object1.myName=="zombies" and event.object2.myName=="bullet") or 
-		(event.object1.myName=="bullet" and event.object2.myName=="zombies")) then
-		event.object1:removeSelf()
-		event.object1.myName=nil
-		event.object2:removeSelf()
-		event.object2.myName=nil
-		score = score + 10
-		textScore.text = "Score: "..score
-		numHit = numHit + 1
-		print ("numhit "..numHit)
 	end
 end
 
@@ -355,7 +271,7 @@ function scene:create( event )
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("maps/level1.tmx") 
 	mte.drawObjects()
-	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 30})
+	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 40})
 	mte.constrainCamera()
 
 	--=======================================
@@ -365,17 +281,17 @@ function scene:create( event )
 	textScore = display.newText("Score: "..score, 10, 10, nil, 12)
 	textWave = display.newText ("Level: "..waveProgress, 10, 30, nil, 12)
 	textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
-	textNumZombies = display.newText ("Num. Zombies: "..numZombies, 10, 70, nil, 12)
+	textNumZombies = display.newText ("Zombies: "..numZombies, 10, 70, nil, 12)
 
 	--=======================================
 	-- CARREGAR PLAYER:
 	--=======================================
 
-	player = loadplayer()
+	player = loader.newPlayer()
 	player.myName = playerName
 
 	--=======================================
-	-- CARREGAR ZUMBIS:
+	-- CARREGAR zombieS:
 	--=======================================
 
 	--zombie = loadZombie()
@@ -428,10 +344,9 @@ function scene:create( event )
 	sceneGroup:insert( textScore )
 	sceneGroup:insert( textWave )
 	sceneGroup:insert( textBullets )
+	sceneGroup:insert( textNumZombies )
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
-	sceneGroup:insert( textNumZombies )
-	
 
 end
 
@@ -447,7 +362,7 @@ function scene:show( event )
 		-- Called when the scene is now on screen 
 
 		mte.physics.start()
-		audio.play( soundTable["backgroundsnd"], {loops=-1})
+		sounds.playStream('game_music')
 
 		-- e.g. start timers, begin animation, play audio, etc.
 	end
@@ -496,7 +411,6 @@ scene:addEventListener( "destroy", scene )
 Runtime:addEventListener( "enterFrame", update )
 Runtime:addEventListener( "enterFrame", LeftStick )
 Runtime:addEventListener( "enterFrame", RightStick )
-Runtime:addEventListener( "collision" , onCollision)
 
 --========================================================================================
 

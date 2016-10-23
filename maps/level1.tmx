@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="34" height="22" tilewidth="62" tileheight="62" nextobjectid="50">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="34" height="22" tilewidth="62" tileheight="62" nextobjectid="59">
  <tileset firstgid="1" name="tilesheet_complete" tilewidth="62" tileheight="62" spacing="2" margin="1" tilecount="540" columns="27">
   <image source="../Game Design/tilesheet_complete.png" width="1728" height="1280"/>
   <tile id="108">
@@ -610,16 +610,16 @@
 0,0,0,0,213,0,0,0,213,0,0,0,213,0,0,0,0,213,0,210,0,213,0,213,0,0,0,0,213,0,0,213,0,0,
 0,0,0,0,0,0,0,0,0,213,0,0,0,210,0,0,0,0,0,0,0,0,0,0,0,0,210,0,0,0,0,210,0,0,
 0,0,0,0,210,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,471,129,129,1170,0,0,129,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,129,129,1170,0,0,129,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,213,0,0,213,0,0,0,213,0,0,0,0,0,0,0,506,1797,0,977,978,979,0,1780,438,0,0,0,210,0,0,213,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,997,998,999,0,1800,438,0,213,0,0,0,0,213,0,
 213,0,0,213,0,0,0,0,0,0,0,0,0,0,0,0,0,0,157,0,0,0,0,0,0,438,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,1297,1300,1298,1300,1300,0,134,0,0,443,156,0,0,0,0,443,0,0,0,210,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,1297,1300,1298,1300,1300,0,134,0,0,0,156,0,0,0,0,0,0,0,0,210,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,213,0,0,210,0,
 0,0,0,0,0,213,0,437,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,210,0,0,0,0,0,437,0,0,1092,1092,0,0,0,0,0,0,0,0,0,0,0,0,0,444,0,0,0,210,0,0,0,0,
+0,210,0,0,0,0,0,437,0,0,1092,1092,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,210,0,0,0,0,
 0,0,0,0,0,210,0,0,0,841,453,455,1860,0,196,0,0,884,0,0,0,1817,0,0,0,0,0,0,0,213,0,0,213,0,
-0,213,0,213,0,0,0,0,270,0,529,529,0,0,0,0,0,0,447,448,449,0,0,159,160,0,470,0,0,0,0,0,0,213,
+0,213,0,213,0,0,0,0,270,0,529,529,0,0,0,0,0,0,447,448,449,0,0,159,160,0,0,0,0,0,0,0,0,213,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,210,0,0,0,213,0,
 0,0,0,210,0,213,0,0,0,0,210,0,0,0,0,213,210,0,0,0,0,210,0,0,0,0,213,0,0,0,0,0,213,0,
 0,0,0,0,0,0,0,0,213,0,0,0,0,0,0,0,0,0,0,0,0,0,213,0,0,0,0,0,0,0,0,0,213,0,
@@ -661,43 +661,13 @@
   <properties>
    <property name="spriteLayer" value="true"/>
   </properties>
-  <object id="1" x="1595.33" y="805.667" width="16" height="62">
+  <object id="6" x="434.042" y="743.875" width="57.4167" height="123.917">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="2" x="1611.64" y="930.182" width="62.3636" height="16.7273">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="3" x="867.958" y="417.25" width="61.625" height="16.375">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="4" x="1053.96" y="620" width="16.875" height="61.875">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="6" x="434.042" y="743.875" width="19.4167" height="123.917">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="7" x="1592.67" y="434" width="18.5833" height="186">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="15" x="1426" y="620.091" width="16.7273" height="61.3636">
+  <object id="7" x="1552.67" y="434" width="58.5833" height="186">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
@@ -739,14 +709,14 @@
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="35" x="879.5" y="627" width="43.75" height="44">
+  <object id="35" x="872.833" y="621" width="55.75" height="56">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="41" x="1510" y="447.5" width="17.25" height="97">
+  <object id="41" x="1505" y="442.5" width="43.25" height="106">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
@@ -773,40 +743,46 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="45" x="1281.64" y="1163.45" width="30.6667" height="30.6667">
+  <object id="45" x="1285.64" y="1162.45" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="46" x="1033.15" y="105.879" width="30.6667" height="30.6667">
+  <object id="46" x="1037.15" y="107.879" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="47" x="1778.61" y="48.303" width="30.6667" height="30.6667">
+  <object id="47" x="1781.61" y="46.303" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="48" x="1966.48" y="414.97" width="30.6667" height="30.6667">
+  <object id="48" x="1967.48" y="417.97" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="49" x="1845.27" y="914.97" width="30.6667" height="30.6667">
+  <object id="49" x="1844.27" y="913.97" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
+  </object>
+  <object id="50" x="1126.55" y="562.294" width="46.8328" height="45.3333" rotation="8.38585">
+   <properties>
+    <property name="physics" value="true"/>
+    <property name="solid" value="true"/>
+   </properties>
   </object>
  </objectgroup>
 </map>

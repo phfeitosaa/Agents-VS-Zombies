@@ -5,35 +5,21 @@
 -----------------------------------------------------------------------------------------
 
 local composer = require( "composer" )
+composer.recycleOnSceneChange = true -- Automatically remove scenes from memory
+
 local scene = composer.newScene()
 
 -- include Corona's "widget" library
 local widget = require "widget"
 
--- Load the music of the game:
-soundTable = {
-	backgroundsnd = audio.loadStream( "sounds/backmenu.mp3" ),
-	click = audio.loadSound( "sounds/click.wav" )
-}
+-- Importando arquivos necessários pro jogo:
+local sounds = require('libs.sounds')
 
 --------------------------------------------
 
 -- forward declarations and other locals
-local playBtn
+local startBtn
 
--- 'onRelease' event listener for playBtn
-local function onPlayBtnRelease()
-	
-	-- go to level1.lua scene
-	composer.gotoScene( "scenes.menu", "fade", 500 )
-	
-	return true	-- indicates successful touch
-end
-
-local function playClickSound()
-	audio.play( soundTable["click"])
-	return true
-end
 
 function scene:create( event )
 	local sceneGroup = self.view
@@ -51,20 +37,34 @@ function scene:create( event )
 	background.y = 0 + display.screenOriginY
 	
 	-- create a widget button (which will loads level1.lua on release)
-	playBtn = widget.newButton(
+	startBtn = widget.newButton(
 		{
 			defaultFile  = "images/ui/btnStart.png",
 			width=170, height=56,
-			onPress = playClickSound,
-			onRelease = onPlayBtnRelease	-- event listener function
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('scenes.menu', {time = 500, effect = 'slideLeft'})
+			end
 		}
 	)
-	playBtn.x = display.contentCenterX
-	playBtn.y = display.contentHeight - 90
+	startBtn.x = display.contentCenterX
+	startBtn.y = display.contentHeight - 90
 	
 	-- all display objects must be inserted into group
 	sceneGroup:insert( background )
-	sceneGroup:insert( playBtn )
+	sceneGroup:insert( startBtn )
+
+	sounds.playStream('menu_music')
+end
+
+-- Android's back button action
+function scene:gotoPreviousScene()
+	native.showAlert('Agents VS Zombies', 'Você tem certeza que quer sair do jogo?', {'Sim', 'Cancelar'}, function(event)
+		if event.action == 'clicked' and event.index == 1 then
+			native.requestExit()
+		end
+	end
+	)
 end
 
 function scene:show( event )
@@ -102,9 +102,9 @@ function scene:destroy( event )
 	-- 
 	-- INSERT code here to cleanup the scene
 	-- e.g. remove display objects, remove touch listeners, save state, etc.
-	if playBtn then
-		playBtn:removeSelf()	-- widgets must be manually removed
-		playBtn = nil
+	if startBtn then
+		startBtn:removeSelf()	-- widgets must be manually removed
+		startBtn = nil
 	end
 end
 

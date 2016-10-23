@@ -62,6 +62,8 @@ M2.createMTE = function()
 	physicsData.defaultFilter = nil
 	physicsData.layer = {}
 	M.physicsData = physicsData
+
+	local rect = M.tileObjects
 	
 	--SCREEN CONSTANTS
 	local viewableContentWidth = display.viewableContentWidth

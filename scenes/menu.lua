@@ -10,29 +10,11 @@ local scene = composer.newScene()
 -- include Corona's "widget" library
 local widget = require "widget"
 
+-- Importando arquivos necessários pro jogo:
+local sounds = require('libs.sounds')
+local widgets = require('libs.widgets')
+
 --------------------------------------------
-
-soundTable = {
-	backgroundsnd = audio.loadStream( "sounds/backmenu.mp3" ),
-	click = audio.loadSound( "sounds/click.wav" )
-}
-
-local function playSndClick()
-	audio.play( soundTable["click"])
-	return true
-end
-
-local function backBtnClick()
-	composer.gotoScene( "scenes.start", "fade", 500 )
-	
-	return true	-- indicates successful touch
-end
-
-local function playBtnClick()
-	composer.gotoScene( "levels.level1", "fade", 500 )
-	
-	return true	-- indicates successful touch
-end
 
 
 function scene:create( event )
@@ -50,16 +32,19 @@ function scene:create( event )
 	background.x = 0 + display.screenOriginX 
 	background.y = 0 + display.screenOriginY
 	
-	-- create a widget button (which will loads level1.lua on release)
+
 	BackBtn = widget.newButton(
 		{
 			label="BACK",
 			labelColor = { default={255}, over={128} },
 			width=154, height=40,
-			onPress = playSndClick,
-			onRelease = backBtnClick
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('scenes.start', {time = 500, effect = 'slideRight'})
+			end
 		}
 	)
+
 	BackBtn.x = 30
 	BackBtn.y = 300
 
@@ -69,8 +54,10 @@ function scene:create( event )
 			labelColor = { default={255}, over={128} },
 			width=154, height=40,
 			fontSize = 24,
-			onPress = playSndClick,
-			onRelease = playBtnClick
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
 		}
 	)
 	PlayBtn.x = 430
@@ -80,6 +67,8 @@ function scene:create( event )
 	sceneGroup:insert( background )
 	sceneGroup:insert( PlayBtn )
 	sceneGroup:insert( BackBtn )
+
+	self.gotoPreviousScene = 'scenes.menu' -- Allow going back on back button press
 end
 
 function scene:show( event )
@@ -114,14 +103,18 @@ function scene:destroy( event )
 	local sceneGroup = self.view
 	
 	-- Called prior to the removal of scene's "view" (sceneGroup)
-	-- 
-	-- INSERT code here to cleanup the scene
-	-- e.g. remove display objects, remove touch listeners, save state, etc.
-	
+
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
 	end
+
+	if BackBtn then
+		BackBtn:removeSelf()
+		BackBtn = nil
+	end
+
+	-- e.g. remove display objects, remove touch listeners, save state, etc.
 end
 
 ---------------------------------------------------------------------------------
