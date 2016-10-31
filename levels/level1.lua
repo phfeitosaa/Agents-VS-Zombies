@@ -271,7 +271,7 @@ function scene:create( event )
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("maps/level1.tmx") 
 	mte.drawObjects()
-	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 40})
+	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 50})
 	mte.constrainCamera()
 
 	--=======================================
