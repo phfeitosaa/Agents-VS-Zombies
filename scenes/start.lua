@@ -40,7 +40,8 @@ function scene:create( event )
 	startBtn = widget.newButton(
 		{
 			defaultFile  = "images/ui/btnStart.png",
-			width=170, height=56,
+			overFile = "images/ui/btnStartHover.png",
+			width=222, height=60,
 			onRelease = function()
 				sounds.play('tap')
 				composer.gotoScene('scenes.menu', {time = 500, effect = 'slideLeft'})

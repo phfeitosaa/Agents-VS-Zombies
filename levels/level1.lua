@@ -19,9 +19,12 @@ local Pathfinder = require ("libs.jumper.pathfinder")
 -- Importando arquivos necessários pro jogo:
 local sounds = require('libs.sounds')
 local loader = require("classes.loader")
+local ui = require("classes.ui")
 
 local shoot
 local goMapping
+
+local handgun
 
 -- Declaração de variaveis locais da tela e posições iniciais:
 local screenW, screenH = display.actualContentWidth, display.actualContentHeight
@@ -48,7 +51,9 @@ waveProgress = 1
 numHit = 0
 score = 0
 numBullets = 20
-numZombies = 60
+numZombies1 = 40
+numZombies2 = 20
+numZombies3 = 10
 
 local sqWidth = 62 -- OBS: Mesmo valor do blockscale
 local sqHeight = 62 -- OBS: Mesmo valor do blockscale
@@ -70,10 +75,10 @@ local map = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 4, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -180,21 +185,64 @@ function goMapping(obj, startPos, endPos)
 end
 
 
-local function makeZombies()
+local function makeZombie1()
 
 	player.xGrid = player.locX
 	player.yGrid = player.locY
 
-	local zombie = loader.newZombie()
-	local xGrid = zombie.locX
-	local yGrid = zombie.locY
+	local zombie1 = loader.newZombie1()
+	local xGrid = zombie1.locX
+	local yGrid = zombie1.locY
 
-	zombie.speed = mRandom(300, 500)
-	goMapping(zombie, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
+	zombie1.speed = 600
+	goMapping(zombie1, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
-	--if #zombie.myPath > 0 then
-	followPath(zombie)
-	--end
+	followPath(zombie1)
+end
+
+local function makeZombie2()
+
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
+	local zombie2 = loader.newZombie2()
+	local xGrid = zombie2.locX
+	local yGrid = zombie2.locY
+
+	zombie2.speed = 800
+	goMapping(zombie2, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
+	
+	followPath(zombie2)
+end
+
+local function makeZombie3()
+
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
+	local zombie3 = loader.newZombie3()
+	local xGrid = zombie3.locX
+	local yGrid = zombie3.locY
+
+	zombie3.speed = 1000
+	goMapping(zombie3, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
+	
+	followPath(zombie3)
+end
+
+local function makeZombieBoss()
+
+	player.xGrid = player.locX
+	player.yGrid = player.locY
+
+	local zombieBoss = loader.newZombieBoss()
+	local xGrid = zombieBoss.locX
+	local yGrid = zombieBoss.locY
+
+	zombieBoss.speed = 1200
+	goMapping(zombieBoss, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
+	
+	followPath(zombieBoss)
 end
 
 --==============================================================
@@ -269,42 +317,37 @@ function scene:create( event )
 
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
-	mte.loadMap("maps/level1.tmx") 
+	mte.loadMap("maps/level1.tmx")
 	mte.drawObjects()
-	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 50})
+	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 60})
 	mte.constrainCamera()
 
 	--=======================================
 	-- CARREGAR UI:
 	--=======================================
 
-	textScore = display.newText("Score: "..score, 10, 10, nil, 12)
-	textWave = display.newText ("Level: "..waveProgress, 10, 30, nil, 12)
-	textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
-	textNumZombies = display.newText ("Zombies: "..numZombies, 10, 70, nil, 12)
+	ui.loadUi()
 
 	--=======================================
 	-- CARREGAR PLAYER:
 	--=======================================
 
-	player = loader.newPlayer()
+	player = loader.newPlayerHandgun()
 	player.myName = playerName
 
 	--=======================================
 	-- CARREGAR zombieS:
 	--=======================================
 
-	--zombie = loadZombie()
-	timer.performWithDelay ( mRandom(500,1000), makeZombies, numZombies )
+	timer.performWithDelay ( mRandom(500,1000), makeZombie1, numZombies1 )
+	timer.performWithDelay ( mRandom(500,1000), makeZombie2, numZombies2 )
+	timer.performWithDelay ( mRandom(500,1000), makeZombie3, numZombies3 )
+	timer.performWithDelay ( mRandom(500,1000), makeZombieBoss, 1 )
 
 	--=======================================
 	-- CARREGAR JOYSTICK:
 	--=======================================
 
-	--local localGroup = display.newGroup()
-	-- 	motionx = 0;
-	-- 	motiony = 0;
-	-- 	speed = 2;
 
 	-- CRIAR O ANALÓGICO ESQUERDO:
 	LeftStick = StickLib.NewLeftStick( 
@@ -332,19 +375,16 @@ function scene:create( event )
         B             = 255
         } )	
 
-	--local circShoot = display.newCircle(465, 260, 50, 50)
-	--circShoot:setFillColor( 0, 0, 0 )
-	--circShoot:addEventListener ( "touch", shoot )
+	local circShoot = display.newCircle(465, 260, 50, 50)
+	circShoot.isVisible = false
+	circShoot:setFillColor( 0, 0, 0 )
+	circShoot:addEventListener ( "touch", shoot )
 
 	--========================================
 	-- INSERINDO ELEMENTOS NO GRUPO:
 	--========================================
 
 	sceneGroup:insert( map )
-	sceneGroup:insert( textScore )
-	sceneGroup:insert( textWave )
-	sceneGroup:insert( textBullets )
-	sceneGroup:insert( textNumZombies )
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
 
