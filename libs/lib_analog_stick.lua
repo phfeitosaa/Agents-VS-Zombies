@@ -1,4 +1,9 @@
 module (..., package.seeall)
+
+local weapons = require("classes.weapons")
+local fireTimer
+
+speed = weapons.getShootSpeed()
  
 --[[
 ----------------------------------------------------------------
@@ -162,6 +167,7 @@ function NewLeftStick( Props )
                         -- STORE INITIAL POSITION
                         T.x0 = ex - T.x
                         T.y0 = ey - T.y
+                        
  
                 elseif T.isFocus then
                         if "moved" == phase then
@@ -172,7 +178,9 @@ function NewLeftStick( Props )
                                 S.percent     = S.distance / S.maxDist
                                 -----------
                                 T.x       = Cos( Rad(S.angle-90) ) * (S.maxDist * S.percent) 
-                                T.y       = Sin( Rad(S.angle-90) ) * (S.maxDist * S.percent) 
+                                T.y       = Sin( Rad(S.angle-90) ) * (S.maxDist * S.percent)
+
+                                mte.zoom(0.6, 1000, easing.outQuad) 
                         
                         elseif "ended"== phase or "cancelled" == phase then
 								Group.beingMoved = false 
@@ -183,6 +191,9 @@ function NewLeftStick( Props )
 								display.getCurrentStage():setFocus( nil, event.id )
                                 S.Timer = timer.performWithDelay( 33, S.onRelease, 0 )
                                 S.Timer.MyStick = S
+                                
+                                mte.zoom(0.8, 1000, easing.outQuad)
+                                
                         end
                 end
  
@@ -335,6 +346,8 @@ function NewRightStick( Props )
                         -- STORE INITIAL POSITION
                         T.x0 = ex - T.x
                         T.y0 = ey - T.y
+
+                        fireTimer = timer.performWithDelay( speed, weapons.shoot, 0 )
  
                 elseif T.isFocus then
                         if "moved" == phase then
@@ -356,6 +369,8 @@ function NewRightStick( Props )
                                 display.getCurrentStage():setFocus( nil, event.id )
                                 S.Timer = timer.performWithDelay( 33, S.onRelease, 0 )
                                 S.Timer.MyStick = S
+
+                                timer.cancel( fireTimer )
                         end
                 end
  
@@ -395,7 +410,7 @@ function NewRightStick( Props )
                 end
  
         end
- 
+
         Group.Thumb:addEventListener( "touch", Group.onDrag )
  
         return Group

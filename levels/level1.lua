@@ -1,6 +1,7 @@
 display.setStatusBar( display.HiddenStatusBar )
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
+--display.setDefault( "isAnchorClamped", false )
 system.activate("multitouch")
 
 local composer = require( "composer" )
@@ -20,11 +21,9 @@ local Pathfinder = require ("libs.jumper.pathfinder")
 local sounds = require('libs.sounds')
 local loader = require("classes.loader")
 local ui = require("classes.ui")
+local weapons = require("classes.weapons")
 
-local shoot
 local goMapping
-
-local handgun
 
 -- Declaração de variaveis locais da tela e posições iniciais:
 local screenW, screenH = display.actualContentWidth, display.actualContentHeight
@@ -41,13 +40,25 @@ local screenTop = display.screenOriginY
 local screenHeight = display.contentHeight - screenTop * 2
 local screenBottom = screenTop + screenHeight
 
+-- Variaveis utilizadas no jogo:
 local player
+local currentWeapon
+local aim
+
+-- set maxHealth and currentHealth values
+maxHealth = 200
+currentHealth = 200
+
+-- nomes das colisões:
+local playerName = "player"
+local zombiesName = "zombies"
+local BulletsName = "bullets"
+local aimName = "aim"
 
 -- Variaveis globais:
 mRandom = math.random
 mFloor = math.floor
 gameActive = true
-waveProgress = 1
 numHit = 0
 score = 0
 numBullets = 20
@@ -57,12 +68,6 @@ numZombies3 = 10
 
 local sqWidth = 62 -- OBS: Mesmo valor do blockscale
 local sqHeight = 62 -- OBS: Mesmo valor do blockscale
-
--- nomes das colisões:
-local playerName = "player"
-local zombiesName = "zombies"
-local BulletsName = "bullets"
-
 
 -- Mapa da fase usada no pathfinder:
 -- 0 = área que pode andar; 1 = área que não pode andar.
@@ -194,7 +199,7 @@ local function makeZombie1()
 	local xGrid = zombie1.locX
 	local yGrid = zombie1.locY
 
-	zombie1.speed = 600
+	zombie1.speed = 500
 	goMapping(zombie1, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie1)
@@ -209,7 +214,7 @@ local function makeZombie2()
 	local xGrid = zombie2.locX
 	local yGrid = zombie2.locY
 
-	zombie2.speed = 800
+	zombie2.speed = 700
 	goMapping(zombie2, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie2)
@@ -224,7 +229,7 @@ local function makeZombie3()
 	local xGrid = zombie3.locX
 	local yGrid = zombie3.locY
 
-	zombie3.speed = 1000
+	zombie3.speed = 900
 	goMapping(zombie3, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie3)
@@ -239,11 +244,12 @@ local function makeZombieBoss()
 	local xGrid = zombieBoss.locX
 	local yGrid = zombieBoss.locY
 
-	zombieBoss.speed = 1200
+	zombieBoss.speed = 1100
 	goMapping(zombieBoss, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombieBoss)
 end
+
 
 --==============================================================
 -- SETAR O ANALÓGICO ESQUERDO: 
@@ -251,13 +257,9 @@ end
 
 function LeftStick( event )
 	
-    LeftStick:move(player, 5, false) -- se a opção for true o objeto se move com o joystick
-	
-	--print("LeftStick:getAngle = "..LeftStick:getAngle())
-	--print("LeftStick:getDistance = "..LeftStick:getDistance())
-	--print("LeftStick:getPercent = "..LeftStick:getPercent()*100)
-	--print("POSICAO X / Y  " ..player.x,player.y)
-	
+    LeftStick:move(player, 5, false) -- se a opção for true o objeto rotaciona com o joystick
+	LeftStick:move(aim, 5, false)
+
 end
 
 --==============================================================
@@ -266,36 +268,22 @@ end
 
 function RightStick( event )
 
-	distance = RightStick:getDistance()
-
 	-- SHOW STICK INFO
     Text.text = "ANGLE = "..RightStick:getAngle().."   DIST = "..math.ceil(RightStick:getDistance()).."   PERCENT = "..math.ceil(RightStick:getPercent()*100).."%"
 
 	RightStick:rotate(player, true)
-	RightStick:addEventListener("touch", shoot)
+	RightStick:rotate(aim, true)
+
+	angulo = RightStick:getAngle()
 end
 
 
---==============================================================
--- Função de atirar:
---==============================================================
-
-function shoot(event)
-	if event.phase == "began" then
-		if numBullets ~= 0 then
-			timer.performWithDelay(500, sounds.atirar)
-			numBullets = numBullets - 1
-			print(numBullets)
-			--local bullet = display.newImage("images/sprites/bullet.png")
-			--physics.addBody(bullet, "static", {density = 1, friction = 0, bounce = 0});
-			--bullet.xScale = 0.5
-			--bullet.yScale = 0.5 
-			--bullet.myName = "bullet"
-		elseif numBullets == 0 then
-			timer.performWithDelay(500, sounds.semBala)
-		end
+function onCollision(event)
+	if(event.object1.myName =="player" and event.object2.myName =="obj") then
+		print("Map Collision!")
 	end
 end
+
 
 -- ===================================================================================================================================
 
@@ -318,15 +306,9 @@ function scene:create( event )
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("maps/level1.tmx")
-	mte.drawObjects()
-	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 60})
+	mte.drawObjects(true)
+	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 20})
 	mte.constrainCamera()
-
-	--=======================================
-	-- CARREGAR UI:
-	--=======================================
-
-	ui.loadUi()
 
 	--=======================================
 	-- CARREGAR PLAYER:
@@ -339,15 +321,37 @@ function scene:create( event )
 	-- CARREGAR zombieS:
 	--=======================================
 
-	timer.performWithDelay ( mRandom(500,1000), makeZombie1, numZombies1 )
-	timer.performWithDelay ( mRandom(500,1000), makeZombie2, numZombies2 )
-	timer.performWithDelay ( mRandom(500,1000), makeZombie3, numZombies3 )
-	timer.performWithDelay ( mRandom(500,1000), makeZombieBoss, 1 )
+	timerz1 = timer.performWithDelay ( 2000, makeZombie1, numZombies1 )
+	
+	timerz2 = timer.performWithDelay ( 2000, makeZombie2, numZombies2 )
+	
+	timerz3 = timer.performWithDelay ( 2000, makeZombie3, numZombies3 )
+	
+    timer.pause(timerz2)
+	timer.pause(timerz3)
+
+	timer.resume(timerz2)
+	timer.resume(timerz3)
+	
+	timer.performWithDelay ( 2000, makeZombieBoss, 1 )
+
+	--=======================================
+	-- CARREGAR UI:
+	--=======================================
+
+	ui.loadUi()
+
+	if(currentHealth > 0) then 
+		ui.damageCharacter(10, currentHealth) 
+	end
+	
+	-- teste da aim:
+	aim = loader.newAim()
+	aim.myName = aimName
 
 	--=======================================
 	-- CARREGAR JOYSTICK:
 	--=======================================
-
 
 	-- CRIAR O ANALÓGICO ESQUERDO:
 	LeftStick = StickLib.NewLeftStick( 
@@ -375,11 +379,6 @@ function scene:create( event )
         B             = 255
         } )	
 
-	local circShoot = display.newCircle(465, 260, 50, 50)
-	circShoot.isVisible = false
-	circShoot:setFillColor( 0, 0, 0 )
-	circShoot:addEventListener ( "touch", shoot )
-
 	--========================================
 	-- INSERINDO ELEMENTOS NO GRUPO:
 	--========================================
@@ -387,6 +386,7 @@ function scene:create( event )
 	sceneGroup:insert( map )
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
+
 
 end
 
@@ -398,8 +398,15 @@ function scene:show( event )
 	
 	if phase == "will" then
 		-- Called when the scene is still off screen and is about to move on screen
+
+		if not mte.zoom() then
+        	mte.zoom(0.8, 3000, easing.outQuad)
+    	end
+
 	elseif phase == "did" then
 		-- Called when the scene is now on screen 
+
+		
 
 		mte.physics.start()
 		sounds.playStream('game_music')
@@ -451,6 +458,7 @@ scene:addEventListener( "destroy", scene )
 Runtime:addEventListener( "enterFrame", update )
 Runtime:addEventListener( "enterFrame", LeftStick )
 Runtime:addEventListener( "enterFrame", RightStick )
+Runtime:addEventListener("collision" , onCollision)
 
 --========================================================================================
 

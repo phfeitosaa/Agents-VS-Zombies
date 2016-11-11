@@ -8,11 +8,14 @@ local sounds = require('libs.sounds')
 
 local loader = require("classes.loader")
 
+local screenLeft = display.screenOriginX
+local screenTop = display.screenOriginY
+
 local ui = {}
 
 -----------------------------------------------------
 
-ui.loadUi = function()
+function ui.loadUi()
 
 	---------------------------------------------------------
 	-- Textos de Debug:
@@ -22,14 +25,34 @@ ui.loadUi = function()
 	--textWave = display.newText ("Level: "..waveProgress, 10, 30, nil, 12)
 	--textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
 
+	-- create red health bar
+	healthBarRed = display.newRect(70, 21, maxHealth, 17)
+	healthBarRed:setFillColor( 255/255, 0/255, 0/255 )
+	healthBarRed.strokeWidth = 1
+	healthBarRed:setStrokeColor( 255, 0, 0, .5 )
+    
+    -- create orange health bar
+	healthBarOrange = display.newRect(70, 21, maxHealth, 17)
+	healthBarOrange:setFillColor( 255/255, 140/255, 0/255 )
+	healthBarOrange.strokeWidth = 1
+	healthBarOrange:setStrokeColor( 255, 140, 0, .5 )
+    --healthBarOrange.width = healthBarOrange.width - 30
+    
+    -- create green health bar
+	healthBarGreen = display.newRect(70, 21, maxHealth, 17)
+	healthBarGreen:setFillColor( 0/255, 255/255, 0/255 )
+	healthBarGreen.strokeWidth = 1
+	healthBarGreen:setStrokeColor( 0, 255, 0, .5 )
+    --healthBarGreen.width = healthBarOrange.width - 50
 
-	hpBar = display.newImage("images/ui/Healthbar.png", 70, 20)
-	hpBar.xScale = 0.8
-	hpBar.yScale = 0.8
-
-	--hpBarRect = display.newRect(30, 30, 50, 50)
-	--hpBarRect:setFillColor( red )
+	-- create red damage bar (-create it second so it lays on top)
+	--damageBar = display.newRect(70, 21, 30, 17)
+	--damageBar:setFillColor( 255/255, 0/255, 0/255 )
 	
+	healthBarImg = display.newImage("images/ui/Healthbar.png", 70, 20)
+	healthBarImg.xScale = 0.70
+	healthBarImg.yScale = 0.70
+
 	---------------------------------------------------------
 	-- Background da caixa de weapons:
 	---------------------------------------------------------
@@ -88,9 +111,30 @@ ui.loadUi = function()
 
 	rightArrow.x = 500
 	rightArrow.y = 39
-
 	
+	
+	---------------------------------------------------------
+	-- Background Blood Image:
+	---------------------------------------------------------
+--	
+--	bloodSplash = display.newImageRect( "images/ui/blood.png", display.actualContentWidth, display.actualContentHeight )
+--	bloodSplash.anchorX = 0
+--	bloodSplash.anchorY = 0
+--	bloodSplash.x = 0 + display.screenOriginX 
+--	bloodSplash.y = 0 + display.screenOriginY
+	
+end
 
+
+function ui.updateHealthBar(damageTaken)
+	healthBarRed.width = healthBarRed.width - damageTaken
+	healthBarRed.x = healthBarRed.x - damageTaken/2
+end
+
+-- lower the character's currentHealth
+function ui.damageCharacter(damageTaken, currentHealth)
+	currentHealth = currentHealth - damageTaken
+	ui.updateHealthBar(damageTaken)
 end
 
 return ui

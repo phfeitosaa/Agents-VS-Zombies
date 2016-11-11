@@ -173,4 +173,20 @@ loader.newZombieBoss = function()
 	return zombieBoss
 end
 
+loader.newAim = function()
+	local spriteSheet = graphics.newImageSheet("images/ui/target.png", {width = 50, height = 50, numFrames = 1})
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
+	local aim = display.newSprite(spriteSheet, sequenceData)
+	local setup = {
+		kind = "sprite", 
+		layer = 2,
+		locX = 17,
+		locY = 10,
+		offsetX = 13,
+		offsetY = -250
+	}
+	mte.addSprite(aim, setup)
+	return aim
+end
+
 return loader
