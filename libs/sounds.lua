@@ -13,6 +13,8 @@ local sounds = {
 	game_music = 'sounds/game_music.ogg',
 	tap = 'sounds/tap.wav',
 	pistol = 'sounds/pistol.wav',
+    rifle = 'sounds/rifle.wav',
+    shotgun = 'sounds/shotgun.wav',
 	noAmmo = 'sounds/outofammo.wav'
 }
 

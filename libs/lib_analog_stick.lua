@@ -1,9 +1,9 @@
 module (..., package.seeall)
 
-local weapons = require("classes.weapons")
+local utils = require("classes.utils")
 local fireTimer
 
-speed = weapons.getShootSpeed()
+speed = utils.getShootSpeed()
  
 --[[
 ----------------------------------------------------------------
@@ -347,7 +347,7 @@ function NewRightStick( Props )
                         T.x0 = ex - T.x
                         T.y0 = ey - T.y
 
-                        fireTimer = timer.performWithDelay( speed, weapons.shoot, 0 )
+                        fireTimer = timer.performWithDelay( speed, utils.shoot, 0 )
  
                 elseif T.isFocus then
                         if "moved" == phase then

@@ -62,8 +62,6 @@ M2.createMTE = function()
 	physicsData.defaultFilter = nil
 	physicsData.layer = {}
 	M.physicsData = physicsData
-
-	local rect = M.tileObjects
 	
 	--SCREEN CONSTANTS
 	local viewableContentWidth = display.viewableContentWidth
@@ -1258,7 +1256,9 @@ M2.createMTE = function()
 			end
 		end
 		if destroyObject == nil or destroyObject == true then
-			sprite:removeSelf()
+			if sprite.removeSelf then
+				sprite:removeSelf()
+			end
 			sprite = nil
 		else
 			local stage = display.getCurrentStage()
@@ -4513,7 +4513,7 @@ M2.createMTE = function()
 							tileObjects[layer][locX][locY].noDraw = true
 						end
 					end
-					rect = tileObjects[layer][locX][locY]
+					local rect = tileObjects[layer][locX][locY]
 					rect.x = levelPosX + offsetX
 					rect.y = levelPosY - offsetY
 					rect.levelPosX = rect.x

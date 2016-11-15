@@ -26,23 +26,21 @@ function ui.loadUi()
 	--textBullets = display.newText ("Bullets: "..numBullets, 10, 50, nil, 12)
 
 	-- create red health bar
-	healthBarRed = display.newRect(70, 21, maxHealth, 17)
+	healthBarRed = display.newRect(70, 21, 200, 17)
 	healthBarRed:setFillColor( 255/255, 0/255, 0/255 )
-	healthBarRed.strokeWidth = 1
-	healthBarRed:setStrokeColor( 255, 0, 0, .5 )
+
     
     -- create orange health bar
-	healthBarOrange = display.newRect(70, 21, maxHealth, 17)
+	healthBarOrange = display.newRect(70, 21, 200, 17)
 	healthBarOrange:setFillColor( 255/255, 140/255, 0/255 )
-	healthBarOrange.strokeWidth = 1
-	healthBarOrange:setStrokeColor( 255, 140, 0, .5 )
-    --healthBarOrange.width = healthBarOrange.width - 30
+
+    --healthBarOrange.width = healthBarOrange.width - 100
+    --healthBarOrange.x = healthBarOrange.x - 50
     
     -- create green health bar
-	healthBarGreen = display.newRect(70, 21, maxHealth, 17)
+	healthBarGreen = display.newRect(70, 21, 200, 17)
 	healthBarGreen:setFillColor( 0/255, 255/255, 0/255 )
-	healthBarGreen.strokeWidth = 1
-	healthBarGreen:setStrokeColor( 0, 255, 0, .5 )
+
     --healthBarGreen.width = healthBarOrange.width - 50
 
 	-- create red damage bar (-create it second so it lays on top)
@@ -111,8 +109,7 @@ function ui.loadUi()
 
 	rightArrow.x = 500
 	rightArrow.y = 39
-	
-	
+
 	---------------------------------------------------------
 	-- Background Blood Image:
 	---------------------------------------------------------
@@ -127,14 +124,16 @@ end
 
 
 function ui.updateHealthBar(damageTaken)
-	healthBarRed.width = healthBarRed.width - damageTaken
-	healthBarRed.x = healthBarRed.x - damageTaken/2
-end
-
--- lower the character's currentHealth
-function ui.damageCharacter(damageTaken, currentHealth)
-	currentHealth = currentHealth - damageTaken
-	ui.updateHealthBar(damageTaken)
+	if (healthBarGreen.width > 0) then
+		healthBarGreen.width = healthBarGreen.width - damageTaken
+		healthBarGreen.x = healthBarGreen.x - damageTaken/2
+	elseif (healthBarOrange.width > 0) then
+		healthBarOrange.width = healthBarOrange.width - damageTaken
+		healthBarOrange.x = healthBarOrange.x - damageTaken/2
+	else
+		healthBarRed.width = healthBarRed.width - damageTaken
+		healthBarRed.x = healthBarRed.x - damageTaken/2
+	end
 end
 
 return ui

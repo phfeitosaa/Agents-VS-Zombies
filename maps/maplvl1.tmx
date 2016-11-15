@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="34" height="22" tilewidth="62" tileheight="62" nextobjectid="50">
  <tileset firstgid="1" name="tilesheet_complete" tilewidth="62" tileheight="62" spacing="2" margin="1" tilecount="540" columns="27">
-  <image source="../Game Design/tilesheet_complete.png" width="1728" height="1280"/>
+  <image source="../images/tilesheet_complete.png" width="1728" height="1280"/>
   <tile id="108">
    <properties>
     <property name="name" value="wall"/>
@@ -478,7 +478,7 @@
   </tile>
  </tileset>
  <tileset firstgid="541" name="tilesheet_complete_2" tilewidth="62" tileheight="62" spacing="2" margin="1" tilecount="540" columns="20">
-  <image source="../Game Design/tilesheet_complete_2.png" width="1280" height="1728"/>
+  <image source="../images/tilesheet_complete_2.png" width="1280" height="1728"/>
   <tile id="343">
    <properties>
     <property name="physics" value="true"/>
@@ -523,7 +523,7 @@
   </tile>
  </tileset>
  <tileset firstgid="1081" name="tilesheet_complete_3" tilewidth="62" tileheight="62" spacing="2" margin="1" tilecount="540" columns="27">
-  <image source="../Game Design/tilesheet_complete_3.png" width="1728" height="1280"/>
+  <image source="../images/tilesheet_complete_3.png" width="1728" height="1280"/>
   <tile id="216">
    <properties>
     <property name="physics" value="true"/>
@@ -556,7 +556,7 @@
   </tile>
  </tileset>
  <tileset firstgid="1621" name="tilesheet_complete_4" tilewidth="62" tileheight="62" spacing="2" margin="1" tilecount="540" columns="20">
-  <image source="../Game Design/tilesheet_complete_4.png" width="1280" height="1728"/>
+  <image source="../images/tilesheet_complete_4.png" width="1280" height="1728"/>
   <tile id="176">
    <properties>
     <property name="physics" value="true"/>

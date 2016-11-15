@@ -21,7 +21,6 @@ local Pathfinder = require ("libs.jumper.pathfinder")
 local sounds = require('libs.sounds')
 local loader = require("classes.loader")
 local ui = require("classes.ui")
-local weapons = require("classes.weapons")
 
 local goMapping
 
@@ -46,12 +45,11 @@ local currentWeapon
 local aim
 
 -- set maxHealth and currentHealth values
-maxHealth = 200
-currentHealth = 200
+maxHealth = 600
+currentHealth = 600
 
 -- nomes das colisões:
 local playerName = "player"
-local zombiesName = "zombies"
 local BulletsName = "bullets"
 local aimName = "aim"
 
@@ -62,9 +60,13 @@ gameActive = true
 numHit = 0
 score = 0
 numBullets = 20
-numZombies1 = 40
-numZombies2 = 20
-numZombies3 = 10
+numZombies1 = 50
+zombie1Name = "zombie1"
+numZombies2 = 30
+zombie2Name = "zombie2"
+numZombies3 = 20
+zombie3Name = "zombie3"
+zombieBossName = "zombieBoss"
 
 local sqWidth = 62 -- OBS: Mesmo valor do blockscale
 local sqHeight = 62 -- OBS: Mesmo valor do blockscale
@@ -146,12 +148,21 @@ local function followPath(obj)
 			obj.targetY = player.yGrid
 			goMapping(obj, {x=obj.myPath[obj.idx].x, y=obj.myPath[obj.idx].y}, {x=player.xGrid, y=player.yGrid})
 			obj.idx = 1
+			obj.rotation = 180
 		end
 		local pos = pixelXYFromGridXY(obj.myPath[obj.idx].x, obj.myPath[obj.idx].y)
 		transition.to(obj, {time=obj.speed, x=pos.x, y=pos.y, onComplete=followPath})
 		obj.idx = obj.idx + 1
 	else
 		display.remove( obj )
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			ui.updateHealthBar(10)
+			currentHealth = currentHealth - 10
+		else
+			print("game over!")
+		end
 	end
 end
 
@@ -200,6 +211,8 @@ local function makeZombie1()
 	local yGrid = zombie1.locY
 
 	zombie1.speed = 500
+	zombie1.myName = zombie1Name
+
 	goMapping(zombie1, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie1)
@@ -215,6 +228,8 @@ local function makeZombie2()
 	local yGrid = zombie2.locY
 
 	zombie2.speed = 700
+	zombie2.myName = zombie2Name
+
 	goMapping(zombie2, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie2)
@@ -230,6 +245,8 @@ local function makeZombie3()
 	local yGrid = zombie3.locY
 
 	zombie3.speed = 900
+	zombie3.myName = zombie3Name
+
 	goMapping(zombie3, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombie3)
@@ -245,11 +262,28 @@ local function makeZombieBoss()
 	local yGrid = zombieBoss.locY
 
 	zombieBoss.speed = 1100
+	zombieBoss.myName = zombieBossName
+
 	goMapping(zombieBoss, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
 	followPath(zombieBoss)
 end
 
+local function spawZombies1()
+	timer.performWithDelay ( 1000, makeZombie1, numZombies1 )
+end
+
+local function spawZombies2()
+	timer.performWithDelay ( 1000, makeZombie2, numZombies2)
+end
+
+local function spawZombies3()
+	timer.performWithDelay ( 1000, makeZombie3, numZombies3 )
+end
+
+local function spawZombieBoss()
+	timer.performWithDelay ( 5000, makeZombieBoss)
+end
 
 --==============================================================
 -- SETAR O ANALÓGICO ESQUERDO: 
@@ -258,7 +292,6 @@ end
 function LeftStick( event )
 	
     LeftStick:move(player, 5, false) -- se a opção for true o objeto rotaciona com o joystick
-	LeftStick:move(aim, 5, false)
 
 end
 
@@ -273,17 +306,22 @@ function RightStick( event )
 
 	RightStick:rotate(player, true)
 	RightStick:rotate(aim, true)
-
-	angulo = RightStick:getAngle()
 end
 
 
 function onCollision(event)
-	if(event.object1.myName =="player" and event.object2.myName =="obj") then
-		print("Map Collision!")
+	if(event.object1.myName =="player" and event.object2.myName =="zombieBoss") then
+		print("zombie1 Collision!")
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			ui.updateHealthBar(100)
+			currentHealth = currentHealth - 100
+		else
+			print("game over!")
+		end
 	end
 end
-
 
 -- ===================================================================================================================================
 
@@ -305,6 +343,10 @@ function scene:create( event )
 
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
+	mte.loadTileSet("myTileSet1", "images/tilesheet_complete.png")
+	mte.loadTileSet("myTileSet2", "images/tilesheet_complete_2.png")
+	mte.loadTileSet("myTileSet3", "images/tilesheet_complete_3.png") 
+	mte.loadTileSet("myTileSet4", "images/tilesheet_complete_4.png") 
 	mte.loadMap("maps/level1.tmx")
 	mte.drawObjects(true)
 	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 20})
@@ -320,35 +362,24 @@ function scene:create( event )
 	--=======================================
 	-- CARREGAR zombieS:
 	--=======================================
-
-	timerz1 = timer.performWithDelay ( 2000, makeZombie1, numZombies1 )
 	
-	timerz2 = timer.performWithDelay ( 2000, makeZombie2, numZombies2 )
-	
-	timerz3 = timer.performWithDelay ( 2000, makeZombie3, numZombies3 )
-	
-    timer.pause(timerz2)
-	timer.pause(timerz3)
-
-	timer.resume(timerz2)
-	timer.resume(timerz3)
-	
-	timer.performWithDelay ( 2000, makeZombieBoss, 1 )
+	timer.performWithDelay ( 2000, spawZombies1)
+	timer.performWithDelay ( 60000, spawZombies2)
+	timer.performWithDelay ( 60000, spawZombies3)
+	timer.performWithDelay ( 60000, spawZombieBoss)
 
 	--=======================================
 	-- CARREGAR UI:
 	--=======================================
 
 	ui.loadUi()
-
-	if(currentHealth > 0) then 
-		ui.damageCharacter(10, currentHealth) 
-	end
 	
-	-- teste da aim:
+	----------------------------------------
+	-- Adidionar a mira:
+	----------------------------------------
 	aim = loader.newAim()
 	aim.myName = aimName
-
+	
 	--=======================================
 	-- CARREGAR JOYSTICK:
 	--=======================================
@@ -360,7 +391,7 @@ function scene:create( event )
         y             = 260,
         thumbSize     = 5,
         borderSize    = 32, 
-        snapBackSpeed = .2, 
+        snapBackSpeed = .5, 
         R             = 25,
         G             = 255,
         B             = 255
@@ -373,7 +404,7 @@ function scene:create( event )
         y             = 260,
         thumbSize     = 5,
         borderSize    = 32, 
-        snapBackSpeed = .2, 
+        snapBackSpeed = .5, 
         R             = 25,
         G             = 255,
         B             = 255
@@ -386,7 +417,6 @@ function scene:create( event )
 	sceneGroup:insert( map )
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
-
 
 end
 
@@ -458,8 +488,105 @@ scene:addEventListener( "destroy", scene )
 Runtime:addEventListener( "enterFrame", update )
 Runtime:addEventListener( "enterFrame", LeftStick )
 Runtime:addEventListener( "enterFrame", RightStick )
-Runtime:addEventListener("collision" , onCollision)
+Runtime:addEventListener( "collision" , onCollision)
 
---========================================================================================
+
+
+
+--==============================================================================================================================================================
+
+-- Aqui encontra-se todas as armas e suas respectivas funções e atributos:
+
+--==============================================================================================================================================================
+
+
+
+
+------------------------------------------------------------------------------
+
+local handgun = {}
+local rifle = {}
+local shotgun = {}
+
+local damage = 0
+local numBulletsMax = 0
+local numBulletsActual = 0
+
+-- Atributos da handgun:
+handgun.damage = 10
+handgun.numBulletsMax = 60
+handgun.numBulletsActual = 60
+
+-- Atributos do rifle:
+rifle.damage = 20
+rifle.numBulletsMax = 200
+rifle.numBulletsActual = 200
+
+-- Atributos da shotgun:
+shotgun.damage = 50
+shotgun.numBulletsMax = 30
+shotgun.numBulletsActual = 30
+
+------------------------------------------------------------------------------
+
+--==============================================================
+-- Funções de atirar:
+--==============================================================
+
+function destroyBullet ( obj )
+	obj:removeSelf()
+	print("bullet destroyed!")
+end
+
+function handgunShoot()
+
+	if handgun.numBulletsActual > 0 then
+		sounds.play('pistol')
+		handgun.numBulletsActual = handgun.numBulletsActual - 1
+		print(handgun.numBulletsActual)
+		local bullet = loader.newBullet()
+		bullet.myName = "bullet"
+		bullet.x = player.x
+		bullet.y = player.y
+		bullet.rotation = aim.rotation
+		transition.moveTo( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=100, rotation=aim.rotation, onComplete=destroyBullet } )
+		
+	elseif handgun.numBulletsActual == 0 then
+		sounds.play('noAmmo')
+	end
+
+end
+
+function rifleShoot()
+	if rifle.numBulletsActual > 0 then
+		sounds.play('rifle')
+		rifle.numBulletsActual = rifle.numBulletsActual - 1
+		print(rifle.numBulletsActual)
+		local bullet = loader.newBullet()
+		bullet.myName = "bullet"
+		bullet.x = player.x
+		bullet.y = player.y
+		bullet.rotation = aim.rotation
+		transition.to( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=50, onComplete=destroyBullet } )
+		
+	elseif rifle.numBulletsActual == 0 then
+		sounds.play('noAmmo')
+	end
+end
+
+function shotgunShoot()
+	if handgun.numBulletsActual > 0 then
+		sounds.play('shotgun')
+		handgun.numBulletsActual = handgun.numBulletsActual - 1
+		print(handgun.numBulletsActual)
+		local bullet = loader.newBullet()
+		bullet.myName = "bullet"
+		bullet.rotation = aim.rotation
+		transition.to( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=50, onComplete=destroyBullet } )
+		
+	elseif handgun.numBulletsActual == 0 then
+		sounds.play('noAmmo')
+	end
+end
 
 return scene

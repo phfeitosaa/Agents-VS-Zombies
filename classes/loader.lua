@@ -93,7 +93,7 @@ loader.newZombie1 = function()
 	local setup = {
 		kind = "sprite", 
 		layer = 2,
-		locX = mRandom(1,32),
+		locX = mRandom(9,12),
 		locY = 1
 	}
 	mte.physics.addBody( zombie1, "dynamic" )
@@ -115,10 +115,11 @@ loader.newZombie2 = function()
 	}
 	local zombie2 = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
-		kind = "sprite", 
+		kind = "sprite",
 		layer = 2,
-		locX = mRandom(1,32),
-		locY = 1
+		locX = 1,
+		locY = mRandom(16,19),
+		rotation = 90
 	}
 	mte.physics.addBody( zombie2, "dynamic" )
 	mte.addSprite(zombie2, setup)
@@ -179,14 +180,29 @@ loader.newAim = function()
 	local aim = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
-		layer = 2,
+		layer = 3,
 		locX = 17,
 		locY = 10,
 		offsetX = 13,
-		offsetY = -250
+		offsetY = -200
 	}
 	mte.addSprite(aim, setup)
 	return aim
+end
+
+loader.newBullet = function()
+	local spriteSheet = graphics.newImageSheet("images/ui/bullet.png", {width = 5, height = 95, numFrames = 1})
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
+	local bullet = display.newSprite(spriteSheet, sequenceData)
+	local setup = {
+		kind = "sprite", 
+		layer = 2,
+		locX = 17.25,
+		locY = 8.5
+	}
+	mte.physics.addBody( bullet, "static" )
+	mte.addSprite(bullet, setup)
+	return bullet
 end
 
 return loader
