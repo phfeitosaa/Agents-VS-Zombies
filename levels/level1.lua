@@ -7,6 +7,9 @@ system.activate("multitouch")
 local composer = require( "composer" )
 local scene = composer.newScene()
 
+-- include Corona's "widget" library
+local widget = require "widget"
+
 -- Importando a biblioteca MTE:
 mte = require("libs.MTE.mte").createMTE()
 
@@ -20,7 +23,7 @@ local Pathfinder = require ("libs.jumper.pathfinder")
 -- Importando arquivos necessários pro jogo:
 local sounds = require('libs.sounds')
 local loader = require("classes.loader")
-local ui = require("classes.ui")
+local utils = require("classes.utils")
 
 local goMapping
 
@@ -41,7 +44,7 @@ local screenBottom = screenTop + screenHeight
 
 -- Variaveis utilizadas no jogo:
 local player
-local currentWeapon
+local currentWeapon = "rifle"
 local aim
 
 -- set maxHealth and currentHealth values
@@ -71,31 +74,33 @@ zombieBossName = "zombieBoss"
 local sqWidth = 62 -- OBS: Mesmo valor do blockscale
 local sqHeight = 62 -- OBS: Mesmo valor do blockscale
 
+
+
 -- Mapa da fase usada no pathfinder:
 -- 0 = área que pode andar; 1 = área que não pode andar.
 local map = {
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 4, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
       }
 
 --==============================================================
@@ -148,7 +153,6 @@ local function followPath(obj)
 			obj.targetY = player.yGrid
 			goMapping(obj, {x=obj.myPath[obj.idx].x, y=obj.myPath[obj.idx].y}, {x=player.xGrid, y=player.yGrid})
 			obj.idx = 1
-			obj.rotation = 180
 		end
 		local pos = pixelXYFromGridXY(obj.myPath[obj.idx].x, obj.myPath[obj.idx].y)
 		transition.to(obj, {time=obj.speed, x=pos.x, y=pos.y, onComplete=followPath})
@@ -158,10 +162,11 @@ local function followPath(obj)
 
 		-- Damage Caracter:
 		if(currentHealth > 0) then 
-			ui.updateHealthBar(10)
+			updateHealthBar(10)
+			sounds.playPainSnd()
 			currentHealth = currentHealth - 10
 		else
-			print("game over!")
+			--composer.gotoScene('scenes.start', {time = 500, effect = 'fade'})
 		end
 	end
 end
@@ -181,11 +186,6 @@ function goMapping(obj, startPos, endPos)
 	
 	local path = pather:getPath(sx,sy, ex,ey)
 	if path then
-		--[[
-		if mode == "DIAGONAL" then
-			path:fill()
-		end
-		]]
 		obj.targetX = player.xGrid
 		obj.targetY = player.yGrid
 		local pNodes = path:nodes()
@@ -200,6 +200,9 @@ function goMapping(obj, startPos, endPos)
 	end  
 end
 
+--==============================================================
+-- Gerar zombies:
+--==============================================================
 
 local function makeZombie1()
 
@@ -207,6 +210,7 @@ local function makeZombie1()
 	player.yGrid = player.locY
 
 	local zombie1 = loader.newZombie1()
+	zombie1.myName = zombie1Name
 	local xGrid = zombie1.locX
 	local yGrid = zombie1.locY
 
@@ -224,10 +228,11 @@ local function makeZombie2()
 	player.yGrid = player.locY
 
 	local zombie2 = loader.newZombie2()
+	zombie2.myName = zombie2Name
 	local xGrid = zombie2.locX
 	local yGrid = zombie2.locY
 
-	zombie2.speed = 700
+	zombie2.speed = 600
 	zombie2.myName = zombie2Name
 
 	goMapping(zombie2, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
@@ -241,6 +246,7 @@ local function makeZombie3()
 	player.yGrid = player.locY
 
 	local zombie3 = loader.newZombie3()
+	zombie3.myName = zombie3Name
 	local xGrid = zombie3.locX
 	local yGrid = zombie3.locY
 
@@ -258,10 +264,11 @@ local function makeZombieBoss()
 	player.yGrid = player.locY
 
 	local zombieBoss = loader.newZombieBoss()
+	zombieBoss.myName = zombieBossName
 	local xGrid = zombieBoss.locX
 	local yGrid = zombieBoss.locY
 
-	zombieBoss.speed = 1100
+	zombieBoss.speed = 1200
 	zombieBoss.myName = zombieBossName
 
 	goMapping(zombieBoss, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
@@ -270,19 +277,19 @@ local function makeZombieBoss()
 end
 
 local function spawZombies1()
-	timer.performWithDelay ( 1000, makeZombie1, numZombies1 )
+	timer.performWithDelay ( 2000, makeZombie1, numZombies1 )
 end
 
 local function spawZombies2()
-	timer.performWithDelay ( 1000, makeZombie2, numZombies2)
+	timer.performWithDelay ( 2000, makeZombie2, numZombies2)
 end
 
 local function spawZombies3()
-	timer.performWithDelay ( 1000, makeZombie3, numZombies3 )
+	timer.performWithDelay ( 2000, makeZombie3, numZombies3 )
 end
 
 local function spawZombieBoss()
-	timer.performWithDelay ( 5000, makeZombieBoss)
+	timer.performWithDelay ( 2000, makeZombieBoss)
 end
 
 --==============================================================
@@ -302,7 +309,8 @@ end
 function RightStick( event )
 
 	-- SHOW STICK INFO
-    Text.text = "ANGLE = "..RightStick:getAngle().."   DIST = "..math.ceil(RightStick:getDistance()).."   PERCENT = "..math.ceil(RightStick:getPercent()*100).."%"
+    --Text.text = "ANGLE = "..RightStick:getAngle().."   DIST = "..math.ceil(RightStick:getDistance()).."   
+    --PERCENT = "..math.ceil(RightStick:getPercent()*100).."%"
 
 	RightStick:rotate(player, true)
 	RightStick:rotate(aim, true)
@@ -315,31 +323,60 @@ function onCollision(event)
 
 		-- Damage Caracter:
 		if(currentHealth > 0) then 
-			ui.updateHealthBar(100)
+			updateHealthBar(100)
 			currentHealth = currentHealth - 100
 		else
 			print("game over!")
 		end
 	end
+
+	if(event.object1.myName == "player" and event.object2.myName == "bullet") then
+		print("COLISAO COM A BALA BOCÓ")
+	end
+
+	if(event.object1.myName == "zombie1" and event.object2.myName == "bullet") then
+		print("COLISAO COM ZOMBIE 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	end
 end
 
--- ===================================================================================================================================
+--==============================================================
+-- Atualizar a barra de vida:
+--==============================================================
+
+function updateHealthBar(damageTaken)
+	if (healthBarGreen.width > 0) then
+		healthBarGreen.width = healthBarGreen.width - damageTaken
+		healthBarGreen.x = healthBarGreen.x - damageTaken/2
+	elseif (healthBarOrange.width > 0) then
+		healthBarOrange.width = healthBarOrange.width - damageTaken
+		healthBarOrange.x = healthBarOrange.x - damageTaken/2
+	else
+		healthBarRed.width = healthBarRed.width - damageTaken
+		healthBarRed.x = healthBarRed.x - damageTaken/2
+	end
+end
+
+
+
+--==============================================================================================================================================================
+--                              Função Principal
+--==============================================================================================================================================================
 
 function scene:create( event )
 	local sceneGroup = self.view
 
-	--=======================================
+	--==============================================================================
 	-- ABILITAR A FÍSICA: 
-	--=======================================
+	--==============================================================================
 
 	mte.enableBox2DPhysics()
 	mte.physics.start()
 	mte.physics.setGravity(0,0)
 	--mte.physics.setDrawMode("hybrid")
 
-	--=======================================
+	--==============================================================================
 	-- CARREGAR MAPA:
-	--=======================================
+	--==============================================================================
 
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
@@ -352,37 +389,142 @@ function scene:create( event )
 	map = mte.setCamera({levelPosX = centerX, levelPosY = halfH, blockScale = 20})
 	mte.constrainCamera()
 
-	--=======================================
+	--==============================================================================
 	-- CARREGAR PLAYER:
-	--=======================================
+	--==============================================================================
 
-	player = loader.newPlayerHandgun()
+	player = loader.newPlayer()
 	player.myName = playerName
 
-	--=======================================
-	-- CARREGAR zombieS:
-	--=======================================
+	if (currentWeapon == "rifle") then
+		player:setSequence("rifle")
+	elseif (currentWeapon == "shotgun") then
+		player:setSequence("shotgun")
+	elseif (currentWeapon == "pistol") then
+		player:setSequence("pistol")
+	end
+
+	--==============================================================================
+	-- CARREGAR ZOMBIES:
+	--==============================================================================
 	
 	timer.performWithDelay ( 2000, spawZombies1)
-	timer.performWithDelay ( 60000, spawZombies2)
+	timer.performWithDelay ( 50000, spawZombies2)
 	timer.performWithDelay ( 60000, spawZombies3)
-	timer.performWithDelay ( 60000, spawZombieBoss)
+	timer.performWithDelay ( 80000, spawZombieBoss)
 
-	--=======================================
+	--==============================================================================
 	-- CARREGAR UI:
-	--=======================================
+	--==============================================================================
 
-	ui.loadUi()
+	--==============================================================================
+	-- Background Blood Image:
+	--==============================================================================
 	
-	----------------------------------------
-	-- Adidionar a mira:
-	----------------------------------------
+	bloodSplash = display.newImageRect( "images/ui/blood2.png", display.actualContentWidth, display.actualContentHeight )
+	bloodSplash.anchorX = 0
+	bloodSplash.anchorY = 0
+	bloodSplash.x = 0 + display.screenOriginX 
+	bloodSplash.y = 0 + display.screenOriginY
+
+
+	PauseBtn = widget.newButton(
+		{
+			defaultFile  = "images/ui/transparentDark31.png",
+			overFile = "images/ui/btnStartHover.png",
+			--width=222, height=60,
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('scenes.menu', {time = 500, effect = 'slideLeft'})
+			end
+		}
+	)
+	PauseBtn.x = -6
+	PauseBtn.y = 21
+
+
+	-- ======== Health Bar Inicio: ========
+
+	-- create red health bar
+	healthBarRed = display.newRect(130, 21, 200, 17)
+	healthBarRed:setFillColor( 255/255, 0/255, 0/255 )
+
+    
+    -- create orange health bar
+	healthBarOrange = display.newRect(130, 21, 200, 17)
+	healthBarOrange:setFillColor( 255/255, 140/255, 0/255 )
+
+    
+    -- create green health bar
+	healthBarGreen = display.newRect(130, 21, 200, 17)
+	healthBarGreen:setFillColor( 0/255, 255/255, 0/255 )
+
+	
+	healthBarImg = display.newImage("images/ui/Healthbar.png", 130, 20)
+	healthBarImg.xScale = 0.70
+	healthBarImg.yScale = 0.70
+
+	--==============================================================================
+	-- Backgrounds das caixas de armas:
+	--==============================================================================
+
+
+	weapon1Back = widget.newButton(
+		{
+			defaultFile  = "images/ui/Rifle.png",
+			onRelease = function()
+				sounds.play('tap')
+				player:setSequence("rifle")
+				--StickLib.setCW("rifle")
+			end
+		}
+	)
+	weapon1Back.x = 310
+	weapon1Back.y = 39
+	weapon1Back.xScale = 0.2
+	weapon1Back.yScale = 0.2
+
+
+	weapon2Back = widget.newButton(
+		{
+			defaultFile  = "images/ui/Pistol.png",
+			onRelease = function()
+				sounds.play('tap')
+				player:setSequence("handgun")
+				--StickLib.setCW("handgun")
+			end
+		}
+	)
+	weapon2Back.x = 450
+	weapon2Back.y = 39
+	weapon2Back.xScale = 0.2
+	weapon2Back.yScale = 0.2
+
+	--==============================================================================
+	-- Load Weapons:
+	--==============================================================================
+
+	rifle, handgun = loader.newAssaultClass()
+
+	--==============================================================================
+	-- Load text bullets:
+	--==============================================================================
+
+	--local RifleBullets = display.newText(" "..rifle.numBulletsActual , 450, 30, native.systemFont, 15 )
+	
+	
+	--==============================================================================
+	-- ADIDIONAR A MIRA:
+	--==============================================================================
+
 	aim = loader.newAim()
 	aim.myName = aimName
+	StickLib.setAim(aim)
+	aim = StickLib.getAim()
 	
-	--=======================================
+	--==============================================================================
 	-- CARREGAR JOYSTICK:
-	--=======================================
+	--==============================================================================
 
 	-- CRIAR O ANALÓGICO ESQUERDO:
 	LeftStick = StickLib.NewLeftStick( 
@@ -410,17 +552,26 @@ function scene:create( event )
         B             = 255
         } )	
 
-	--========================================
+	--===============================================================================
 	-- INSERINDO ELEMENTOS NO GRUPO:
-	--========================================
+	--===============================================================================
 
 	sceneGroup:insert( map )
+	
+	sceneGroup:insert( PauseBtn )
+	sceneGroup:insert( healthBarRed )
+	sceneGroup:insert( healthBarOrange )
+	sceneGroup:insert( healthBarGreen )
+	sceneGroup:insert( healthBarImg )
+	sceneGroup:insert( weapon1Back )
+	sceneGroup:insert( weapon2Back )
+	sceneGroup:insert( rifle )
+	sceneGroup:insert( handgun )
+
 	sceneGroup:insert( LeftStick )
 	sceneGroup:insert( RightStick )
 
 end
-
--- ======================================================================================================================================
 
 function scene:show( event )
 	local sceneGroup = self.view
@@ -436,10 +587,9 @@ function scene:show( event )
 	elseif phase == "did" then
 		-- Called when the scene is now on screen 
 
-		
-
 		mte.physics.start()
 		sounds.playStream('game_music')
+		--sounds.play('pain')
 
 		-- e.g. start timers, begin animation, play audio, etc.
 	end
@@ -464,13 +614,42 @@ end
 function scene:destroy( event )
 
 	-- Called prior to the removal of scene's "view" (sceneGroup)
-	-- 
-	-- INSERT code here to cleanup the scene
+
+	scene:removeEventListener("create", scene)
+	scene:removeEventListener("show", scene)
+	scene:removeEventListener("hide", scene)
+	scene:removeEventListener("destroy", scene)
+
+	map:removeSelf()
+	map = nil
+	
+	PauseBtn:removeSelf()
+	PauseBtn = nil
+	healthBarRed:removeSelf()
+	healthBarRed = nil
+	healthBarOrange:removeSelf()
+	healthBarOrange = nil
+	healthBarGreen:removeSelf()
+	healthBarGreen = nil
+	healthBarImg:removeSelf()
+	healthBarImg = nil
+	weapon1Back:removeSelf()
+	weapon1Back = nil
+	weapon2Back:removeSelf()
+	weapon2Back = nil
+
+	LeftStick:removeSelf()
+	LeftStick = nil
+	RightStick:removeSelf()
+	RightStick = nil
+
 	-- e.g. remove display objects, remove touch listeners, save state, etc.
 	local sceneGroup = self.view
 	
-	package.loaded[mte.physics] = nil
-	mte.physics = nil
+	--package.loaded[mte.physics] = nil
+	--mte.physics = nil
+
+	timer.performWithDelay(500, mte.cleanup)
 end
 
 function update()
@@ -490,17 +669,11 @@ Runtime:addEventListener( "enterFrame", LeftStick )
 Runtime:addEventListener( "enterFrame", RightStick )
 Runtime:addEventListener( "collision" , onCollision)
 
+--========================================================================================
 
-
-
---==============================================================================================================================================================
-
--- Aqui encontra-se todas as armas e suas respectivas funções e atributos:
-
---==============================================================================================================================================================
-
-
-
+--==============================================================
+-- Funções de atirar:
+--==============================================================
 
 ------------------------------------------------------------------------------
 
@@ -529,10 +702,6 @@ shotgun.numBulletsActual = 30
 
 ------------------------------------------------------------------------------
 
---==============================================================
--- Funções de atirar:
---==============================================================
-
 function destroyBullet ( obj )
 	obj:removeSelf()
 	print("bullet destroyed!")
@@ -542,6 +711,7 @@ function handgunShoot()
 
 	if handgun.numBulletsActual > 0 then
 		sounds.play('pistol')
+		player:setSequence( "handgunfire" )
 		handgun.numBulletsActual = handgun.numBulletsActual - 1
 		print(handgun.numBulletsActual)
 		local bullet = loader.newBullet()
@@ -549,7 +719,7 @@ function handgunShoot()
 		bullet.x = player.x
 		bullet.y = player.y
 		bullet.rotation = aim.rotation
-		transition.moveTo( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=100, rotation=aim.rotation, onComplete=destroyBullet } )
+		transition.moveTo( bullet, { x=aim.x, y=aim.y, time=10, rotation=aim.rotation, onComplete=destroyBullet } )
 		
 	elseif handgun.numBulletsActual == 0 then
 		sounds.play('noAmmo')
@@ -566,8 +736,10 @@ function rifleShoot()
 		bullet.myName = "bullet"
 		bullet.x = player.x
 		bullet.y = player.y
+		print(player.x, aim.x)
+		print(player.y, aim.y)
 		bullet.rotation = aim.rotation
-		transition.to( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=50, onComplete=destroyBullet } )
+		transition.to( bullet, { x=aim.x, y=aim.y, time=10, rotation=aim.rotation, onComplete=destroyBullet } )
 		
 	elseif rifle.numBulletsActual == 0 then
 		sounds.play('noAmmo')
@@ -582,11 +754,12 @@ function shotgunShoot()
 		local bullet = loader.newBullet()
 		bullet.myName = "bullet"
 		bullet.rotation = aim.rotation
-		transition.to( bullet, { x=aim.x + aim.offsetX, y=aim.y + aim.offsetY, time=50, onComplete=destroyBullet } )
+		transition.to( bullet, { x=aim.x, y=aim.y, time=10, rotation=aim.rotation, onComplete=destroyBullet } )
 		
 	elseif handgun.numBulletsActual == 0 then
 		sounds.play('noAmmo')
 	end
 end
+
 
 return scene

@@ -1,7 +1,7 @@
 
 local utils = {}
 
-local currentWeapon = "handgun"
+local currentWeapon = "rifle"
 
 function utils.getShootSpeed()
 
@@ -9,7 +9,7 @@ function utils.getShootSpeed()
 		return 300
 	end
 	if (currentWeapon == "rifle") then
-		return 80
+		return 100
 	end
 	if (currentWeapon == "shotgun") then
 		return 1000

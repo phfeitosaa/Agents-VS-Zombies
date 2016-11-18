@@ -2,6 +2,20 @@ module (..., package.seeall)
 
 local utils = require("classes.utils")
 local fireTimer
+local aimlocal
+local currentWeapon
+
+setAim = function(aim)
+    aimlocal = aim
+end
+
+getAim = function()
+    return aimlocal
+end
+
+setCW = function(cw)
+    currentWeapon = cw
+end
 
 speed = utils.getShootSpeed()
  
@@ -111,6 +125,8 @@ function NewLeftStick( Props )
                 Obj.x = Obj.x + Cos( Rad(self.angle-90) ) * (maxSpeed * self.percent) 
                 Obj.y = Obj.y + Sin( Rad(self.angle-90) ) * (maxSpeed * self.percent)
 				
+                aimlocal.x = Obj.x
+                aimlocal.y = Obj.y
         end
 		
 		---------------------------------------------

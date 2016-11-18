@@ -19,7 +19,7 @@ local sounds = require('libs.sounds')
 
 -- forward declarations and other locals
 local startBtn
-
+local background
 
 function scene:create( event )
 	local sceneGroup = self.view
@@ -30,7 +30,7 @@ function scene:create( event )
 	-- e.g. add display objects to 'sceneGroup', add touch listeners, etc.
 
 	-- display a background image
-	local background = display.newImageRect( "images/backStart.png", display.actualContentWidth, display.actualContentHeight )
+	background = display.newImageRect( "images/backStart.png", display.actualContentWidth, display.actualContentHeight )
 	background.anchorX = 0
 	background.anchorY = 0
 	background.x = 0 + display.screenOriginX 
@@ -107,6 +107,15 @@ function scene:destroy( event )
 		startBtn:removeSelf()	-- widgets must be manually removed
 		startBtn = nil
 	end
+
+	background:removeSelf()
+	background = nil
+
+	scene:removeEventListener("create", scene)
+	scene:removeEventListener("show", scene)
+	scene:removeEventListener("hide", scene)
+	scene:removeEventListener("destroy", scene)
+
 end
 
 ---------------------------------------------------------------------------------

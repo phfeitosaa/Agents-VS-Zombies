@@ -35,7 +35,9 @@ function scene:create( event )
 
 	BackBtn = widget.newButton(
 		{
-			label="BACK",
+			label="back",
+			font="Deanna.ttf",
+			fontSize = 36,
 			labelColor = { default={255}, over={128} },
 			width=154, height=40,
 			onRelease = function()
@@ -45,28 +47,81 @@ function scene:create( event )
 		}
 	)
 
-	BackBtn.x = 30
-	BackBtn.y = 300
+	BackBtn.x = 1
+	BackBtn.y = 290
 
 	PlayBtn = widget.newButton(
 		{
-			label="START",
+			label="start",
+			font="Deanna.ttf",
 			labelColor = { default={255}, over={128} },
 			width=154, height=40,
-			fontSize = 24,
+			fontSize = 70,
 			onRelease = function()
 				sounds.play('tap')
 				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
 			end
 		}
 	)
-	PlayBtn.x = 430
-	PlayBtn.y = 70
+	PlayBtn.x = 400
+	PlayBtn.y = 60
+
+	AchivBtn = widget.newButton(
+		{
+			label="achievements",
+			font="Deanna.ttf",
+			labelColor = { default={255}, over={128} },
+			width=154, height=40,
+			fontSize = 40,
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
+		}
+	)
+	AchivBtn.x = 390
+	AchivBtn.y = 130
+
+	PrefBtn = widget.newButton(
+		{
+			label="preferences",
+			font="Deanna.ttf",
+			labelColor = { default={255}, over={128} },
+			width=154, height=40,
+			fontSize = 45,
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
+		}
+	)
+	PrefBtn.x = 390
+	PrefBtn.y = 200
+
+	AboutBtn = widget.newButton(
+		{
+			label="about",
+			font="Deanna.ttf",
+			labelColor = { default={255}, over={128} },
+			width=154, height=40,
+			fontSize = 50,
+			onRelease = function()
+				sounds.play('tap')
+				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
+		}
+	)
+	AboutBtn.x = 415
+	AboutBtn.y = 270
 	
 	-- all display objects must be inserted into group
 	sceneGroup:insert( background )
-	sceneGroup:insert( PlayBtn )
 	sceneGroup:insert( BackBtn )
+	sceneGroup:insert( PlayBtn )
+	sceneGroup:insert( AchivBtn )
+	sceneGroup:insert( PrefBtn )
+	sceneGroup:insert( AboutBtn )
+
 
 	self.gotoPreviousScene = 'scenes.menu' -- Allow going back on back button press
 end
@@ -104,15 +159,35 @@ function scene:destroy( event )
 	
 	-- Called prior to the removal of scene's "view" (sceneGroup)
 
+	if BackBtn then
+		BackBtn:removeSelf()
+		BackBtn = nil
+	end
+
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
 	end
 
-	if BackBtn then
-		BackBtn:removeSelf()
-		BackBtn = nil
+	if AchivBtn then
+		AchivBtn:removeSelf()
+		AchivBtn = nil
 	end
+
+	if PrefBtn then
+		PrefBtn:removeSelf()
+		PrefBtn = nil
+	end
+
+	if AboutBtn then
+		AboutBtn:removeSelf()
+		AboutBtn = nil
+	end
+
+	scene:removeEventListener("create", scene)
+	scene:removeEventListener("show", scene)
+	scene:removeEventListener("hide", scene)
+	scene:removeEventListener("destroy", scene)
 
 	-- e.g. remove display objects, remove touch listeners, save state, etc.
 end
