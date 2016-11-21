@@ -14,48 +14,79 @@ local widget = require "widget"
 
 -- Importando arquivos necessários pro jogo:
 local sounds = require('libs.sounds')
+--local level1 = require('levels.level1')
 
 --------------------------------------------
 
 -- forward declarations and other locals
-local startBtn
+local AssaultClassBtn
+local EngineerClassBtn
 local background
+local BackBtn
 
 function scene:create( event )
 	local sceneGroup = self.view
 
-	-- Called when the scene's view does not exist.
-	-- 
-	-- INSERT code here to initialize the scene
-	-- e.g. add display objects to 'sceneGroup', add touch listeners, etc.
-
 	-- display a background image
-	background = display.newImageRect( "images/backStart.png", display.actualContentWidth, display.actualContentHeight )
+	background = display.newImageRect( "images/classSelect.png", display.actualContentWidth, display.actualContentHeight )
 	background.anchorX = 0
 	background.anchorY = 0
-	background.x = 0 + display.screenOriginX 
+	background.x = 0 + display.screenOriginX
 	background.y = 0 + display.screenOriginY
-	
-	-- create a widget button (which will loads level1.lua on release)
-	startBtn = widget.newButton(
+
+	SelectText = display.newText("Select a Class", display.contentCenterX, 30, "Deanna.ttf", 50 )
+
+	BackBtn = widget.newButton(
 		{
-			defaultFile  = "images/ui/btnStart.png",
-			overFile = "images/ui/btnStartHover.png",
-			width=222, height=60,
+			label="back",
+			font="Deanna.ttf",
+			fontSize = 36,
+			labelColor = { default={255}, over={128} },
+			width=154, height=40,
 			onRelease = function()
 				sounds.play('tap')
-				composer.gotoScene('scenes.menu', {time = 500, effect = 'slideLeft'})
+				composer.gotoScene('scenes.menu', {time = 500, effect = 'slideRight'})
 			end
 		}
 	)
-	startBtn.x = display.contentCenterX
-	startBtn.y = display.contentHeight - 90
+
+	BackBtn.x = 1
+	BackBtn.y = 300
+	
+	AssaultClassBtn = widget.newButton(
+		{
+			defaultFile  = "images/ui/Assault.png",
+			width=200, height=116,
+			onRelease = function()
+				sounds.play('tap')
+				--level1.setClass("Assault")
+				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
+		}
+	)
+	AssaultClassBtn.x = display.contentCenterX - 120
+	AssaultClassBtn.y = display.contentCenterY
+
+	EngineerClassBtn = widget.newButton(
+		{
+			defaultFile  = "images/ui/Engineer.png",
+			width=200, height=116,
+			onRelease = function()
+				sounds.play('tap')
+				--level1.setClass("Engineer")
+				--composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+			end
+		}
+	)
+	EngineerClassBtn.x = display.contentCenterX + 120
+	EngineerClassBtn.y = display.contentCenterY
 	
 	-- all display objects must be inserted into group
 	sceneGroup:insert( background )
-	sceneGroup:insert( startBtn )
-
-	sounds.playStream('menu_music')
+	sceneGroup:insert( SelectText )
+	sceneGroup:insert( BackBtn )
+	sceneGroup:insert( AssaultClassBtn )
+	sceneGroup:insert( EngineerClassBtn )
 end
 
 -- Android's back button action
@@ -98,23 +129,38 @@ end
 
 function scene:destroy( event )
 	local sceneGroup = self.view
-	
-	-- Called prior to the removal of scene's "view" (sceneGroup)
-	-- 
-	-- INSERT code here to cleanup the scene
-	-- e.g. remove display objects, remove touch listeners, save state, etc.
-	if startBtn then
-		startBtn:removeSelf()	-- widgets must be manually removed
-		startBtn = nil
+
+	if (background) then
+		background:removeSelf()
+		background = nil
 	end
 
-	background:removeSelf()
-	background = nil
+	if (SelectText) then
+		SelectText:removeSelf()
+		SelectText = nil
+	end
+
+	if (BackBtn) then
+		BackBtn:removeSelf()
+		BackBtn = nil
+	end
+
+	if (AssaultClassBtn) then
+		AssaultClassBtn:removeSelf()
+		AssaultClassBtn = nil
+	end
+
+	if (EngineerClassBtn) then
+		EngineerClassBtn:removeSelf()
+		EngineerClassBtn = nil
+	end
 
 	scene:removeEventListener("create", scene)
 	scene:removeEventListener("show", scene)
 	scene:removeEventListener("hide", scene)
 	scene:removeEventListener("destroy", scene)
+
+	composer.removeScene("scenes.classSelect")
 
 end
 

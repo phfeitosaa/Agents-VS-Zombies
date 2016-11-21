@@ -5,6 +5,8 @@
 -----------------------------------------------------------------------------------------
 
 local composer = require( "composer" )
+composer.recycleOnSceneChange = true -- Automatically remove scenes from memory
+
 local scene = composer.newScene()
 
 -- include Corona's "widget" library
@@ -12,7 +14,6 @@ local widget = require "widget"
 
 -- Importando arquivos necessários pro jogo:
 local sounds = require('libs.sounds')
-local widgets = require('libs.widgets')
 
 --------------------------------------------
 
@@ -48,7 +49,7 @@ function scene:create( event )
 	)
 
 	BackBtn.x = 1
-	BackBtn.y = 290
+	BackBtn.y = 300
 
 	PlayBtn = widget.newButton(
 		{
@@ -59,7 +60,7 @@ function scene:create( event )
 			fontSize = 70,
 			onRelease = function()
 				sounds.play('tap')
-				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+				composer.gotoScene('scenes.classSelect', {time = 500, effect = 'slideLeft'})
 			end
 		}
 	)
@@ -75,7 +76,7 @@ function scene:create( event )
 			fontSize = 40,
 			onRelease = function()
 				sounds.play('tap')
-				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+				composer.gotoScene('scenes.achievements', {time = 500, effect = 'slideLeft'})
 			end
 		}
 	)
@@ -91,7 +92,7 @@ function scene:create( event )
 			fontSize = 45,
 			onRelease = function()
 				sounds.play('tap')
-				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+				--composer.gotoScene('levels.level1', {time = 500, effect = 'slideLeft'})
 			end
 		}
 	)
@@ -107,7 +108,7 @@ function scene:create( event )
 			fontSize = 50,
 			onRelease = function()
 				sounds.play('tap')
-				composer.gotoScene('levels.level1', {time = 500, effect = 'fade'})
+				composer.gotoScene('scenes.about', {time = 500, effect = 'slideLeft'})
 			end
 		}
 	)
@@ -189,7 +190,7 @@ function scene:destroy( event )
 	scene:removeEventListener("hide", scene)
 	scene:removeEventListener("destroy", scene)
 
-	-- e.g. remove display objects, remove touch listeners, save state, etc.
+	composer.removeScene("scenes.menu")
 end
 
 ---------------------------------------------------------------------------------

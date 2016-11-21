@@ -1,9 +1,22 @@
+module (..., package.seeall)
 
-local utils = {}
+local composer = require( "composer" )
 
-local currentWeapon = "rifle"
+-- Importando arquivos necessários pro jogo:
+local sounds = require('libs.sounds')
 
-function utils.getShootSpeed()
+currentWeapon = "rifle"
+
+function getCurrentWeapon(cw)
+	currentWeapon = cw
+	if (currentWeapon ~= "nil") then
+		print("currentWeapon: " .. currentWeapon)
+	else
+		print("currentWeapon nula")
+	end
+end
+
+function getShootSpeed()
 
 	if (currentWeapon == "handgun") then
 		return 300
@@ -17,7 +30,7 @@ function utils.getShootSpeed()
 end
 
 
-function utils.shoot()
+function shoot()
 
 	if (currentWeapon == "handgun") then
 		handgunShoot()
@@ -30,5 +43,13 @@ function utils.shoot()
 	end
 end
 
-
-return utils
+function die()
+	local background = display.newImageRect( "images/gameOver.png", display.actualContentWidth, display.actualContentHeight )
+	background.anchorX = 0
+	background.anchorY = 0
+	background.x = 0 + display.screenOriginX 
+	background.y = 0 + display.screenOriginY
+	
+	sounds.stop()
+	sounds.playStream("lose")
+end

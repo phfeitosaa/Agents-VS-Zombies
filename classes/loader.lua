@@ -1,5 +1,13 @@
 -- loader.lua
 
+-- include Corona's "widget" library
+local widget = require "widget"
+
+local json = require( "json" )
+
+local sounds = require('libs.sounds')
+local utils = require("classes.utils")
+
 local loader = {}
 
 ----------------------------------------------
@@ -7,6 +15,7 @@ local loader = {}
 ----------------------------------------------
 
 loader.newPlayer = function()
+
 	local spriteSheet = graphics.newImageSheet("images/sprites/player.png", {width = 47, height = 108, numFrames = 6})
 	local sequenceData = {		
 		{name = "handgun", sheet = spriteSheet,  frames = {1}, time = 100},
@@ -29,89 +38,13 @@ loader.newPlayer = function()
 	return player
 end
 
-loader.newPlayerHandgun = function()
-	local spriteSheet = graphics.newImageSheet("images/sprites/handgun.png", {width = 45, height = 61, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
-	local playerHandgun = display.newSprite(spriteSheet, sequenceData)
-	local setup = {
-		kind = "sprite", 
-		layer = 2, 
-		locX = 17,
-		locY = 10
-	}
-	mte.physics.addBody( playerHandgun, "dynamic" )
-	mte.addSprite(playerHandgun, setup)
-	mte.setCameraFocus(playerHandgun)
-	return playerHandgun
-end
-
-----------------------------------------------
--- playerRifle:
-----------------------------------------------
-
-loader.newPlayerRifle = function()
-	local spriteSheet = graphics.newImageSheet("images/sprites/rifle.png", {width = 45, height = 76, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
-	local playerRifle = display.newSprite(spriteSheet, sequenceData)
-	local setup = {
-		kind = "sprite", 
-		layer = 2, 
-		locX = 17,
-		locY = 10
-	}
-	mte.physics.addBody( playerRifle, "dynamic" )
-	mte.addSprite(playerRifle, setup)
-	mte.setCameraFocus(playerRifle)
-	return playerRifle
-end
-
----------------------------------------------
--- playerShotgun:
----------------------------------------------
-
-loader.newPlayerShotgun = function()
-	local spriteSheet = graphics.newImageSheet("images/sprites/shotgun.png", {width = 45, height = 77, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
-	local playerShotgun = display.newSprite(spriteSheet, sequenceData)
-	local setup = {
-		kind = "sprite", 
-		layer = 2, 
-		locX = 17,
-		locY = 10
-	}
-	mte.physics.addBody( playerShotgun, "dynamic" )
-	mte.addSprite(playerShotgun, setup)
-	mte.setCameraFocus(playerShotgun)
-	return playerShotgun
-end
-
 ---------------------------------------------
 -- ZUMBI 1:
 ---------------------------------------------
 
 loader.newZombie1 = function()
 	local spriteSheet = graphics.newImageSheet("images/sprites/zombie1.png", {width = 45, height = 51, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
 	local zombie1 = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
@@ -130,12 +63,7 @@ end
 
 loader.newZombie2 = function()
 	local spriteSheet = graphics.newImageSheet("images/sprites/zombie2.png", {width = 45, height = 51, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
 	local zombie2 = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite",
@@ -155,12 +83,7 @@ end
 
 loader.newZombie3 = function()
 	local spriteSheet = graphics.newImageSheet("images/sprites/zombie3.png", {width = 45, height = 51, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
 	local zombie3 = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
@@ -179,12 +102,7 @@ end
 
 loader.newZombieBoss = function()
 	local spriteSheet = graphics.newImageSheet("images/sprites/zombieBoss.png", {width = 70, height = 74, numFrames = 1})
-	local sequenceData = {		
-		{name = "right", sheet = spriteSheet,  frames = {1}, time = 400},
-		{name = "down", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "left", sheet = spriteSheet, frames = {1}, time = 400},
-		{name = "up", sheet = spriteSheet, frames = {1}, time = 400}
-	}
+	local sequenceData = {{name = "default", frames = {1}, time = 400}}
 	local zombieBoss = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite", 
@@ -208,7 +126,7 @@ loader.newAim = function()
 		locX = 17,
 		locY = 10,
 		offsetX = 13,
-		offsetY = -300
+		offsetY = -600
 	}
 	mte.addSprite(aim, setup)
 	return aim
@@ -231,37 +149,44 @@ loader.newBullet = function()
 	return bullet
 end
 
-loader.newExplosion = function()
-	local spriteSheet = graphics.newImageSheet("images/ui/bullet.png", {width = 5, height = 95, numFrames = 1})
+loader.newLaser = function()
+	local spriteSheet = graphics.newImageSheet("images/ui/laser.png", {width = 3, height = 2000, numFrames = 1})
 	local sequenceData = {{name = "default", frames = {1}, time = 400}}
-	local bullet = display.newSprite(spriteSheet, sequenceData)
+	local laser = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
 		kind = "sprite",
 		layer = 2,
 		locX = 17,
 		locY = 10,
-		offsetX = 12,
-		offsetY = -120
+		offsetX = 13,
+		offsetY = -300
 	}
-	mte.physics.addBody( bullet, "dynamic" )
-	mte.addSprite(bullet, setup)
-	return bullet
+	--mte.physics.addBody( laser, "static" )
+	mte.addSprite(laser, setup)
+	return laser
 end
 
-loader.newAssaultClass = function()
-	
-	local rifleImg = display.newImage("images/sprites/weapons/rifle.png", 310, 52)
-	rifleImg.xScale = 0.2
-	rifleImg.yScale = 0.2
+function loader.newEmitter( fileName, textureFileName, baseDir )
 
-	local handgunImg = display.newImage("images/sprites/weapons/handgun.png", 450, 52)
-	handgunImg.xScale = 0.06
-	handgunImg.yScale = 0.06
-	return rifleImg, handgunImg
+	local filePath = system.pathForFile( fileName, baseDir )
+	--print(filePath)
+
+	local f = io.open( filePath, "r" )
+	local fileData = f:read( "*a" )
+	f:close()
+
+	local emitterParams = json.decode( fileData )
+	emitterParams.textureFileName = textureFileName
+
+	for k,v in pairs(emitterParams) do		
+		emitterParams[k] = tonumber(v) or v
+		--print(k,emitterParams[k])
+	end
+
+	local emitter = display.newEmitter( emitterParams )
+
+	return emitter
 end
 
-loader.newEngineerClass = function()
-	
-end
 
 return loader

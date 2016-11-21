@@ -21,7 +21,10 @@ local sounds = {
 	pain2 = 'sounds/pain2.wav',
 	pain3 = 'sounds/pain3.wav',
 	pain4 = 'sounds/pain4.wav',
-	pain5 = 'sounds/pain5.wav'
+	pain5 = 'sounds/pain5.wav',
+	lose = 'sounds/lose.wav',
+	exp = 'sounds/exp2.flac'
+	--exp = 'sounds/exp.ogg'
 }
 
 -- Reserve two channels for streams and switch between them with a nice fade out / fade in transition

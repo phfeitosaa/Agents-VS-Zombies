@@ -1,7 +1,7 @@
---mte 0v984-7 
-            
+--mte 0v990-1
+             
 local M2 = {}
- 
+
 M2.createMTE = function()
 	
 	local M = {}
@@ -21,6 +21,8 @@ M2.createMTE = function()
 	local tileSets = {}
 	local tileObjects = {}
 	M.tileObjects = tileObjects
+	local extendedObjects = {}
+	M.extendedObjects = extendedObjects
 	local normalSets = {}
 	local loadedTileSets = {}
 	local tileSetNames = {}
@@ -49,6 +51,7 @@ M2.createMTE = function()
 	M.lightingData = {fadeIn = 0.25, fadeOut = 0.25, refreshStyle = 2, refreshAlternator = 4, refreshCounter = 1, resolution = 1.1}
 	local pointLightSource = nil
 	M.enableNormalMaps = false
+	M.objectCullerAccuracy = 2
 	
 	local enablePhysicsByLayer = 0
 	local enablePhysics = {}
@@ -62,6 +65,7 @@ M2.createMTE = function()
 	physicsData.defaultFilter = nil
 	physicsData.layer = {}
 	M.physicsData = physicsData
+	M.managePhysicsStates = true
 	
 	--SCREEN CONSTANTS
 	local viewableContentWidth = display.viewableContentWidth
@@ -423,12 +427,17 @@ M2.createMTE = function()
 		--Convert world coordinates to isometric screen coordinates
 		
 		--find center of map
-		local centerX = map.width / 2 * map.tilewidth
-		local centerY = map.height / 2 * map.tileheight
-	
+		--local centerX = map.width / 2 * map.tilewidth
+		--local centerY = map.height / 2 * map.tileheight
+		local centerX = ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+		local centerY = ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+		
 		--find x,y distances from center
 		local xDelta = levelPosX - centerX
 		local yDelta = levelPosY - centerY
+		if yDelta == 0 then
+			yDelta = 0.000000001
+		end
 		local finalX, finalY
 		if xDelta == 0 and yDelta == 0 then
 			finalX = levelPosX
@@ -462,12 +471,17 @@ M2.createMTE = function()
 		--Convert world coordinates to isometric screen coordinates
 
 		--find center of map
-		local centerX = map.width / 2 * map.tilewidth
-		local centerY = map.height / 2 * map.tileheight
-
+		--local centerX = map.width / 2 * map.tilewidth
+		--local centerY = map.height / 2 * map.tileheight
+		local centerX = ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+		local centerY = ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+		
 		--find x,y distances from center
 		local xDelta = levelPosX - centerX
-		local yDelta = levelPosY - centerY	
+		local yDelta = levelPosY - centerY
+		if yDelta == 0 then
+			yDelta = 0.000000001
+		end	
 		local finalX, finalY
 		if xDelta == 0 and yDelta == 0 then
 			finalX = levelPosX
@@ -499,8 +513,10 @@ M2.createMTE = function()
 
 	M.isoUntransform = function(levelPosX, levelPosY)
 		--find center of map
-		local centerX = map.width / 2 * map.tilewidth
-		local centerY = map.height / 2 * map.tileheight
+		--local centerX = map.width / 2 * map.tilewidth
+		--local centerY = map.height / 2 * map.tileheight
+		local centerX = ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+		local centerY = ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
 
 		--find x,y distances from center
 		local xDelta = (levelPosX - centerX) * 1
@@ -536,8 +552,10 @@ M2.createMTE = function()
 
 	M.isoUntransform2 = function(levelPosX, levelPosY)
 		--find center of map
-		local centerX = map.width / 2 * map.tilewidth
-		local centerY = map.height / 2 * map.tileheight
+		--local centerX = map.width / 2 * map.tilewidth
+		--local centerY = map.height / 2 * map.tileheight
+		local centerX = ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+		local centerY = ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
 
 		--find x,y distances from center
 		levelPosX = levelPosX + M.cameraXoffset[refLayer]
@@ -585,18 +603,18 @@ M2.createMTE = function()
 					for y = masterGroup[layer].vars.camera[2], masterGroup[layer].vars.camera[4], 1 do
 						local locX, locY = x, y
 						if layerWrapX[layer] then
-							if locX < 1 then
+							if locX < 1 - map.locOffsetX then
 								locX = locX + map.layers[layer].width
 							end
-							if locX > map.layers[layer].width then
+							if locX > map.layers[layer].width - map.locOffsetX then
 								locX = locX - map.layers[layer].width
 							end				
 						end
 						if layerWrapY[layer] then
-							if locY < 1 then
+							if locY < 1 - map.locOffsetY then
 								locY = locY + map.layers[layer].height
 							end
-							if locY > map.layers[layer].height then
+							if locY > map.layers[layer].height - map.locOffsetY then
 								locY = locY - map.layers[layer].height
 							end
 						end					
@@ -622,18 +640,18 @@ M2.createMTE = function()
 							for y = masterGroup[layer].vars.camera[2], masterGroup[layer].vars.camera[4], 1 do
 								local locX, locY = x, y
 								if layerWrapX[layer] then
-									if locX < 1 then
+									if locX < 1 - map.locOffsetX then
 										locX = locX + map.layers[layer].width
 									end
-									if locX > map.layers[layer].width then
+									if locX > map.layers[layer].width - map.locOffsetX then
 										locX = locX - map.layers[layer].width
 									end				
 								end
 								if layerWrapY[layer] then
-									if locY < 1 then
+									if locY < 1 - map.locOffsetY then
 										locY = locY + map.layers[layer].height
 									end
-									if locY > map.layers[layer].height then
+									if locY > map.layers[layer].height - map.locOffsetY then
 										locY = locY - map.layers[layer].height
 									end
 								end					
@@ -660,18 +678,18 @@ M2.createMTE = function()
 						for y = masterGroup[layer].vars.camera[2], masterGroup[layer].vars.camera[4], 1 do
 							local locX, locY = x, y
 							if layerWrapX[layer] then
-								if locX < 1 then
+								if locX < 1 - map.locOffsetX then
 									locX = locX + map.layers[layer].width
 								end
-								if locX > map.layers[layer].width then
+								if locX > map.layers[layer].width - map.locOffsetX then
 									locX = locX - map.layers[layer].width
 								end				
 							end
 							if layerWrapY[layer] then
-								if locY < 1 then
+								if locY < 1 - map.locOffsetY then
 									locY = locY + map.layers[layer].height
 								end
-								if locY > map.layers[layer].height then
+								if locY > map.layers[layer].height - map.locOffsetY then
 									locY = locY - map.layers[layer].height
 								end
 							end				
@@ -699,18 +717,18 @@ M2.createMTE = function()
 						for y = masterGroup[layer].vars.camera[2], masterGroup[layer].vars.camera[4], 1 do
 							local locX, locY = x, y
 							if layerWrapX[layer] then
-								if locX < 1 then
+								if locX < 1 - map.locOffsetX then
 									locX = locX + map.layers[layer].width
 								end
-								if locX > map.layers[layer].width then
+								if locX > map.layers[layer].width - map.locOffsetX then
 									locX = locX - map.layers[layer].width
 								end				
 							end
 							if layerWrapY[layer] then
-								if locY < 1 then
+								if locY < 1 - map.locOffsetY then
 									locY = locY + map.layers[layer].height
 								end
-								if locY > map.layers[layer].height then
+								if locY > map.layers[layer].height - map.locOffsetY then
 									locY = locY - map.layers[layer].height
 								end
 							end	
@@ -803,7 +821,9 @@ M2.createMTE = function()
 						else
 							local sprite = masterGroup[i][j]
 							if sprite then
-								processSprite(sprite, i)
+								if not sprite.depthBuffer then
+									processSprite(sprite, i)
+								end
 							end
 						end
 					end
@@ -811,7 +831,9 @@ M2.createMTE = function()
 			end
 		end
 		
-		return table
+		if #table > 0 then
+			return table
+		end
 	end
 	
 	M.toggleLayerPhysicsActive = function(layer, command)
@@ -823,12 +845,16 @@ M2.createMTE = function()
 						if masterGroup[layer][i][j].tiles then
 							for k = 1, masterGroup[layer][i][j].numChildren, 1 do
 								if masterGroup[layer][i][j][k].bodyType then
-									masterGroup[layer][i][j][k].isBodyActive = command
+									if not masterGroup[layer][i][j][k].properties or not masterGroup[layer][i][j][k].properties.isBodyActive then
+										masterGroup[layer][i][j][k].isBodyActive = command
+									end
 								end
 							end
 						else
 							if masterGroup[layer][i][j].bodyType then
-								masterGroup[layer][i][j].isBodyActive = command
+								if not masterGroup[layer][i][j].properties or not masterGroup[layer][i][j].properties.isBodyActive then
+									masterGroup[layer][i][j].isBodyActive = command
+								end
 							end
 						end
 					end
@@ -840,18 +866,26 @@ M2.createMTE = function()
 				if masterGroup[layer][i].tiles then
 					for j = 1, masterGroup[layer][i].numChildren, 1 do
 						if masterGroup[layer][i][j].bodyType then
-							masterGroup[layer][i][j].isBodyActive = command
+							if not masterGroup[layer][i][j].properties or not masterGroup[layer][i][j].properties.isBodyActive then
+								masterGroup[layer][i][j].isBodyActive = command
+							end
 						end
 					end
 				elseif masterGroup[layer][i].depthBuffer then
 					for j = 1, masterGroup[layer][i].numChildren, 1 do
-						if masterGroup[layer][i][j].bodyType then
-							masterGroup[layer][i][j].isBodyActive = command
+						for k = 1, masterGroup[layer][i][j].numChildren, 1 do
+							if masterGroup[layer][i][j][k].bodyType then
+								if not masterGroup[layer][i][j][k].properties or not masterGroup[layer][i][j][k].properties.isBodyActive then
+									masterGroup[layer][i][j][k].isBodyActive = command
+								end
+							end
 						end
 					end
 				else
 					if masterGroup[layer][i].bodyType then
-						masterGroup[layer][i].isBodyActive = command
+						if not masterGroup[layer][i].properties or not masterGroup[layer][i].properties.isBodyActive then
+							masterGroup[layer][i].isBodyActive = command
+						end
 					end
 				end
 			end
@@ -866,12 +900,16 @@ M2.createMTE = function()
 					if masterGroup[layer][i][j].tiles then
 						for k = 1, masterGroup[layer][i][j].numChildren, 1 do
 							if masterGroup[layer][i][j][k].bodyType then
-								masterGroup[layer][i][j][k].isAwake = command
+								if not masterGroup[layer][i][j][k].properties or not masterGroup[layer][i][j][k].properties.isAwake then
+									masterGroup[layer][i][j][k].isAwake = command
+								end
 							end
 						end
 					else
 						if masterGroup[layer][i][j].bodyType then
-							masterGroup[layer][i][j].isAwake = command
+							if not masterGroup[layer][i][j].properties or not masterGroup[layer][i][j].properties.isAwake then
+								masterGroup[layer][i][j].isAwake = command
+							end
 						end
 					end
 				end
@@ -882,18 +920,26 @@ M2.createMTE = function()
 				if masterGroup[layer][i].tiles then
 					for j = 1, masterGroup[layer][i].numChildren, 1 do
 						if masterGroup[layer][i][j].bodyType then
-							masterGroup[layer][i][j].isAwake = command
+							if not masterGroup[layer][i][j].properties or not masterGroup[layer][i][j].properties.isAwake then
+								masterGroup[layer][i][j].isAwake = command
+							end
 						end
 					end
 				elseif masterGroup[layer][i].depthBuffer then
 					for j = 1, masterGroup[layer][i].numChildren, 1 do
-						if masterGroup[layer][i][j].bodyType then
-							masterGroup[layer][i][j].isAwake = command
+						for k = 1, masterGroup[layer][i][j].numChildren, 1 do
+							if masterGroup[layer][i][j][k].bodyType then
+								if not masterGroup[layer][i][j][k].properties or not masterGroup[layer][i][j][k].properties.isAwake then
+									masterGroup[layer][i][j][k].isAwake = command
+								end
+							end
 						end
 					end
 				else
 					if masterGroup[layer][i].bodyType then
-						masterGroup[layer][i].isAwake = command
+						if not masterGroup[layer][i].properties or not masterGroup[layer][i].properties.isAwake then
+							masterGroup[layer][i].isAwake = command
+						end
 					end
 				end
 			end
@@ -961,7 +1007,7 @@ M2.createMTE = function()
 				if not map.layers[i].heightMap then
 					map.layers[i].heightMap = {}
 					for x = 1, map.width, 1 do
-						map.layers[i].heightMap[x] = {}
+						map.layers[i].heightMap[x - map.locOffsetX] = {}
 					end
 				end
 			end
@@ -989,16 +1035,16 @@ M2.createMTE = function()
 		local top = masterGroup[layer].vars.camera[2]
 		local right = masterGroup[layer].vars.camera[3]
 		local bottom = masterGroup[layer].vars.camera[4]
-		if left < 1 then
+		if left < 1 - map.locOffsetX then
 			left = left + map.layers[layer].width
 		end
-		if right > map.layers[layer].width then
+		if right > map.layers[layer].width - map.locOffsetX then
 			right = right - map.layers[layer].width
 		end					
-		if top < 1 then
+		if top < 1 - map.locOffsetY then
 			top = top + map.layers[layer].height
 		end
-		if bottom > map.layers[layer].height then
+		if bottom > map.layers[layer].height - map.locOffsetY then
 			bottom = bottom - map.layers[layer].height
 		end
 		
@@ -1256,9 +1302,7 @@ M2.createMTE = function()
 			end
 		end
 		if destroyObject == nil or destroyObject == true then
-			if sprite.removeSelf then
-				sprite:removeSelf()
-			end
+			sprite:removeSelf()
 			sprite = nil
 		else
 			local stage = display.getCurrentStage()
@@ -1374,11 +1418,11 @@ M2.createMTE = function()
 			sprite.litBy = {}
 			sprite.prevLitBy = {}
 		end
-		local spriteName = setup.name
+		local spriteName = sprite.name or setup.name
 		if not spriteName or spriteName == "" then
 			spriteName = ""..sprite.x.."_"..sprite.y.."_"..layer
 		end
-		if sprites[spriteName] then
+		if sprites[spriteName] and sprites[spriteName] ~= sprite then
 			local tempName = spriteName
 			local counter = 1
 			while sprites[tempName] do
@@ -1404,7 +1448,9 @@ M2.createMTE = function()
 		if setup.sortSpriteOnce ~= nil then
 			sprite.sortSpriteOnce = setup.sortSpriteOnce
 		end
-		sprite.constrainToMap = {true, true, true, true}
+		if not sprite.constrainToMap then
+			sprite.constrainToMap = {true, true, true, true}
+		end
 		if setup.constrainToMap ~= nil then
 			sprite.constrainToMap = setup.constrainToMap
 		end
@@ -1425,7 +1471,7 @@ M2.createMTE = function()
 			if setup.levelWidth then
 				sprite.levelWidth = setup.levelWidth
 				if sprite.objType ~= 3 then
-					sprite.xScale = setup.levelWidth / sprite.width
+					sprite.xScale = setup.levelWidth / (setup.sourceWidth or sprite.width)
 				end
 			else
 				sprite.levelWidth = sprite.width
@@ -1433,7 +1479,7 @@ M2.createMTE = function()
 			if setup.levelHeight then
 				sprite.levelHeight = setup.levelHeight
 				if sprite.objType ~= 3 then
-					sprite.yScale = setup.levelHeight / sprite.height
+					sprite.yScale = setup.levelHeight / (setup.sourceHeight or sprite.height)
 				end
 			else
 				sprite.levelHeight = sprite.height
@@ -1464,13 +1510,13 @@ M2.createMTE = function()
 		else
 			if setup.levelWidth then
 				sprite.levelWidth = setup.levelWidth
-				sprite.xScale = setup.levelWidth / sprite.width
+				sprite.xScale = setup.levelWidth / (setup.sourceWidth or sprite.width)
 			else
 				sprite.levelWidth = sprite.width
 			end
 			if setup.levelHeight then
 				sprite.levelHeight = setup.levelHeight
-				sprite.yScale = setup.levelHeight / sprite.height
+				sprite.yScale = setup.levelHeight / (setup.sourceHeight or sprite.height)
 			else
 				sprite.levelHeight = sprite.height
 			end
@@ -1564,18 +1610,18 @@ M2.createMTE = function()
 				sprite.light.area[i] = nil
 
 				if worldWrapX then
-					if locX < 1 then
+					if locX < 1 - map.locOffsetX then
 						locX = locX + map.width
 					end
-					if locX > map.width then
+					if locX > map.width - map.locOffsetX then
 						locX = locX - map.width
 					end
 				end
 				if worldWrapY then
-					if locY < 1 then
+					if locY < 1 - map.locOffsetY then
 						locY = locY + map.height
 					end
-					if locY > map.height then
+					if locY > map.height - map.locOffsetY then
 						locY = locY - map.height
 					end
 				end
@@ -1590,10 +1636,10 @@ M2.createMTE = function()
 			sprite.light = nil
 		end		
 		if layerWrapX[i] and (sprite.wrapX == nil or sprite.wrapX == true) then
-			while sprite.levelPosX < 1 do
+			while sprite.levelPosX < 1 - (map.locOffsetX * map.tilewidth) do
 				sprite.levelPosX = sprite.levelPosX + map.layers[i].width * map.tilewidth
 			end
-			while sprite.levelPosX > map.layers[i].width * map.tilewidth do
+			while sprite.levelPosX > map.layers[i].width * map.tilewidth - (map.locOffsetX * map.tilewidth) do
 				sprite.levelPosX = sprite.levelPosX - map.layers[i].width * map.tilewidth
 			end		
 			if cameraX - sprite.x < map.layers[i].width * map.tilewidth / -2 then
@@ -1605,10 +1651,10 @@ M2.createMTE = function()
 			end
 		end		
 		if layerWrapY[i] and (sprite.wrapY == nil or sprite.wrapY == true) then
-			while sprite.levelPosY < 1 do
+			while sprite.levelPosY < 1 - (map.locOffsetY * map.tileheight) do
 				sprite.levelPosY = sprite.levelPosY + map.layers[i].height * map.tileheight
 			end
-			while sprite.levelPosY > map.layers[i].height * map.tileheight do
+			while sprite.levelPosY > map.layers[i].height * map.tileheight - (map.locOffsetY * map.tileheight) do
 				sprite.levelPosY = sprite.levelPosY - map.layers[i].height * map.tileheight
 			end		
 			if cameraY - sprite.y < map.layers[i].height * map.tileheight / -2 then
@@ -1645,6 +1691,19 @@ M2.createMTE = function()
 		else
 			masterGroup[layer]:insert(sprite)
 		end	
+		
+		if setup.properties then
+			if not sprite.properties then
+				sprite.properties = {}
+			end
+			for key,value in pairs(setup.properties) do
+				sprite.properties[key] = value
+			end
+		end
+		
+		if setup.managePhysicsStates ~= nil then
+			sprite.managePhysicsStates = setup.managePhysicsStates
+		end
 		
 		return sprite		
 	end
@@ -1713,45 +1772,29 @@ M2.createMTE = function()
 		if not layer then
 			local values = {}
 			for i = 1, #map.layers, 1 do
-				if locX > map.layers[i].width then
-					if locX > map.layers[i].width then
-						locX = locX - map.layers[i].width
-					end
-				elseif locX < 1 then
-					if locX < 1 then
-						locX = locX + map.layers[i].width
-					end
+				if locX > map.layers[i].width - map.locOffsetX then
+					locX = locX - map.layers[i].width
+				elseif locX < 1 - map.locOffsetX then
+					locX = locX + map.layers[i].width
 				end
-				if locY > map.layers[i].height then
-					if locY > map.layers[i].height then
-						locY = locY - map.layers[i].height
-					end
-				elseif locY < 1 then
-					if locY < 1 then
-						locY = locY + map.layers[i].height
-					end
+				if locY > map.layers[i].height - map.locOffsetY then
+					locY = locY - map.layers[i].height
+				elseif locY < 1 - map.locOffsetY then
+					locY = locY + map.layers[i].height
 				end
 				values[i] = map.layers[i].world[locX][locY]
 			end
 			return values
 		else
-			if locX > map.layers[layer].width then
-				if locX > map.layers[layer].width then
-					locX = locX - map.layers[layer].width
-				end
-			elseif locX < 1 then
-				if locX < 1 then
-					locX = locX + map.layers[layer].width
-				end
+			if locX > map.layers[layer].width - map.locOffsetX then
+				locX = locX - map.layers[layer].width
+			elseif locX < 1 - map.locOffsetX then
+				locX = locX + map.layers[layer].width
 			end
-			if locY > map.layers[layer].height then
-				if locY > map.layers[layer].height then
-					locY = locY - map.layers[layer].height
-				end
-			elseif locY < 1 then
-				if locY < 1 then
-					locY = locY + map.layers[layer].height
-				end
+			if locY > map.layers[layer].height - map.locOffsetY then
+				locY = locY - map.layers[layer].height
+			elseif locY < 1 - map.locOffsetY then
+				locY = locY + map.layers[layer].height
 			end
 			return map.layers[layer].world[locX][locY]
 		end
@@ -1793,23 +1836,15 @@ M2.createMTE = function()
 				local locX = options.locX
 				local locY = options.locY
 				local layer = options.layer
-				if locX > map.layers[layer].width then
-					if locX > map.layers[layer].width then
-						locX = locX - map.layers[layer].width
-					end
-				elseif locX < 1 then
-					if locX < 1 then
-						locX = locX + map.layers[layer].width
-					end
+				if locX > map.layers[layer].width - map.locOffsetX then
+					locX = locX - map.layers[layer].width
+				elseif locX < 1 - map.locOffsetX then
+					locX = locX + map.layers[layer].width
 				end
-				if locY > map.layers[layer].height then
-					if locY > map.layers[layer].height then
-						locY = locY - map.layers[layer].height
-					end
-				elseif locY < 1 then
-					if locY < 1 then
-						locY = locY + map.layers[layer].height
-					end
+				if locY > map.layers[layer].height - map.locOffsetY then
+					locY = locY - map.layers[layer].height
+				elseif locY < 1 - map.locOffsetY then
+					locY = locY + map.layers[layer].height
 				end
 				local tile = map.layers[layer].world[locX][locY]
 				------------------------------------------------------------------------------
@@ -1846,23 +1881,15 @@ M2.createMTE = function()
 						local locX = options.locX
 						local locY = options.locY
 						local layer = i
-						if locX > map.layers[layer].width then
-							if locX > map.layers[layer].width then
-								locX = locX - map.layers[layer].width
-							end
-						elseif locX < 1 then
-							if locX < 1 then
-								locX = locX + map.layers[layer].width
-							end
+						if locX > map.layers[layer].width - map.locOffsetX then
+							locX = locX - map.layers[layer].width
+						elseif locX < 1 - map.locOffsetX then
+							locX = locX + map.layers[layer].width
 						end
-						if locY > map.layers[layer].height then
-							if locY > map.layers[layer].height then
-								locY = locY - map.layers[layer].height
-							end
-						elseif locY < 1 then
-							if locY < 1 then
-								locY = locY + map.layers[layer].height
-							end
+						if locY > map.layers[layer].height - map.locOffsetY then
+							locY = locY - map.layers[layer].height
+						elseif locY < 1 - map.locOffsetY then
+							locY = locY + map.layers[layer].height
 						end
 						local tile = map.layers[layer].world[locX][locY]
 						------------------------------------------------------------------------------
@@ -1903,23 +1930,15 @@ M2.createMTE = function()
 					local locX = options.locX
 					local locY = options.locY
 					local layer = i
-					if locX > map.layers[layer].width then
-						if locX > map.layers[layer].width then
-							locX = locX - map.layers[layer].width
-						end
-					elseif locX < 1 then
-						if locX < 1 then
-							locX = locX + map.layers[layer].width
-						end
+					if locX > map.layers[layer].width - map.locOffsetX then
+						locX = locX - map.layers[layer].width
+					elseif locX < 1 - map.locOffsetX then
+						locX = locX + map.layers[layer].width
 					end
-					if locY > map.layers[layer].height then
-						if locY > map.layers[layer].height then
-							locY = locY - map.layers[layer].height
-						end
-					elseif locY < 1 then
-						if locY < 1 then
-							locY = locY + map.layers[layer].height
-						end
+					if locY > map.layers[layer].height - map.locOffsetY then
+						locY = locY - map.layers[layer].height
+					elseif locY < 1 - map.locOffsetY then
+						locY = locY + map.layers[layer].height
 					end
 					local tile = map.layers[layer].world[locX][locY]
 					------------------------------------------------------------------------------
@@ -2734,38 +2753,38 @@ M2.createMTE = function()
 				count = count + 1
 			
 				if worldWrapX then
-					if XlocX > worldSizeXt then
+					if XlocX > worldSizeXt - map.locOffsetX then
 						XlocX = XlocX - worldSizeXt
 					end
-					if XlocX < 1 then
+					if XlocX < 1 - map.locOffsetX then
 						XlocX = XlocX + worldSizeXt
 					end
-					if YlocX > worldSizeXt then
+					if YlocX > worldSizeXt - map.locOffsetX then
 						YlocX = YlocX - worldSizeXt
 					end
-					if YlocX < 1 then
+					if YlocX < 1 - map.locOffsetX then
 						YlocX = YlocX + worldSizeXt
 					end
 				end
 				if worldWrapY then
-					if XlocY > worldSizeYt then
+					if XlocY > worldSizeYt - map.locOffsetY then
 						XlocY = XlocY - worldSizeYt
 					end
-					if XlocY < 1 then
+					if XlocY < 1 - map.locOffsetY then
 						XlocY = XlocY + worldSizeYt
 					end
-					if YlocY > worldSizeYt then
+					if YlocY > worldSizeYt - map.locOffsetY then
 						YlocY = YlocY - worldSizeYt
 					end
-					if YlocY < 1 then
+					if YlocY < 1 - map.locOffsetY then
 						YlocY = YlocY + worldSizeYt
 					end
 				end
 			
-				if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+				if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 					breakX = true
 				end
-				if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+				if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 					breakY = true
 				end
 				if breakX and breakY then
@@ -2921,38 +2940,38 @@ M2.createMTE = function()
 				count = count + 1
 			
 				if worldWrapX then
-					if XlocX > worldSizeXt then
+					if XlocX > worldSizeXt - map.locOffsetX then
 						XlocX = XlocX - worldSizeXt
 					end
-					if XlocX < 1 then
+					if XlocX < 1 - map.locOffsetX then
 						XlocX = XlocX + worldSizeXt
 					end
-					if YlocX > worldSizeXt then
+					if YlocX > worldSizeXt - map.locOffsetX then
 						YlocX = YlocX - worldSizeXt
 					end
-					if YlocX < 1 then
+					if YlocX < 1 - map.locOffsetX then
 						YlocX = YlocX + worldSizeXt
 					end
 				end
 				if worldWrapY then
-					if XlocY > worldSizeYt then
+					if XlocY > worldSizeYt - map.locOffsetY then
 						XlocY = XlocY - worldSizeYt
 					end
-					if XlocY < 1 then
+					if XlocY < 1 - map.locOffsetY then
 						XlocY = XlocY + worldSizeYt
 					end
-					if YlocY > worldSizeYt then
+					if YlocY > worldSizeYt - map.locOffsetY then
 						YlocY = YlocY - worldSizeYt
 					end
-					if YlocY < 1 then
+					if YlocY < 1 - map.locOffsetY then
 						YlocY = YlocY + worldSizeYt
 					end
 				end
 			
-				if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+				if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 					breakX = true
 				end
-				if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+				if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 					breakY = true
 				end
 				if breakX and breakY then
@@ -3108,38 +3127,38 @@ M2.createMTE = function()
 				count = count + 1
 			
 				if worldWrapX then
-					if XlocX > worldSizeXt then
+					if XlocX > worldSizeXt - map.locOffsetX then
 						XlocX = XlocX - worldSizeXt
 					end
-					if XlocX < 1 then
+					if XlocX < 1 - map.locOffsetX then
 						XlocX = XlocX + worldSizeXt
 					end
-					if YlocX > worldSizeXt then
+					if YlocX > worldSizeXt - map.locOffsetX then
 						YlocX = YlocX - worldSizeXt
 					end
-					if YlocX < 1 then
+					if YlocX < 1 - map.locOffsetX then
 						YlocX = YlocX + worldSizeXt
 					end
 				end
 				if worldWrapY then
-					if XlocY > worldSizeYt then
+					if XlocY > worldSizeYt - map.locOffsetY then
 						XlocY = XlocY - worldSizeYt
 					end
-					if XlocY < 1 then
+					if XlocY < 1 - map.locOffsetY then
 						XlocY = XlocY + worldSizeYt
 					end
-					if YlocY > worldSizeYt then
+					if YlocY > worldSizeYt - map.locOffsetY then
 						YlocY = YlocY - worldSizeYt
 					end
-					if YlocY < 1 then
+					if YlocY < 1 - map.locOffsetY then
 						YlocY = YlocY + worldSizeYt
 					end
 				end
 			
-				if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+				if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 					breakX = true
 				end
-				if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+				if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 					breakY = true
 				end
 				if breakX and breakY then
@@ -3295,38 +3314,38 @@ M2.createMTE = function()
 				count = count + 1
 			
 				if worldWrapX then
-					if XlocX > worldSizeXt then
+					if XlocX > worldSizeXt - map.locOffsetX then
 						XlocX = XlocX - worldSizeXt
 					end
-					if XlocX < 1 then
+					if XlocX < 1 - map.locOffsetX then
 						XlocX = XlocX + worldSizeXt
 					end
-					if YlocX > worldSizeXt then
+					if YlocX > worldSizeXt - map.locOffsetX then
 						YlocX = YlocX - worldSizeXt
 					end
-					if YlocX < 1 then
+					if YlocX < 1 - map.locOffsetX then
 						YlocX = YlocX + worldSizeXt
 					end
 				end
 				if worldWrapY then
-					if XlocY > worldSizeYt then
+					if XlocY > worldSizeYt - map.locOffsetY then
 						XlocY = XlocY - worldSizeYt
 					end
-					if XlocY < 1 then
+					if XlocY < 1 - map.locOffsetY then
 						XlocY = XlocY + worldSizeYt
 					end
-					if YlocY > worldSizeYt then
+					if YlocY > worldSizeYt - map.locOffsetY then
 						YlocY = YlocY - worldSizeYt
 					end
-					if YlocY < 1 then
+					if YlocY < 1 - map.locOffsetY then
 						YlocY = YlocY + worldSizeYt
 					end
 				end
 			
-				if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+				if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 					breakX = true
 				end
-				if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+				if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 					breakY = true
 				end
 				if breakX and breakY then
@@ -3564,38 +3583,38 @@ M2.createMTE = function()
 					count = count + 1
 				
 					if worldWrapX then
-						if XlocX > worldSizeXt then
+						if XlocX > worldSizeXt - map.locOffsetX then
 							XlocX = XlocX - worldSizeXt
 						end
-						if XlocX < 1 then
+						if XlocX < 1 - map.locOffsetX then
 							XlocX = XlocX + worldSizeXt
 						end
-						if YlocX > worldSizeXt then
+						if YlocX > worldSizeXt - map.locOffsetX then
 							YlocX = YlocX - worldSizeXt
 						end
-						if YlocX < 1 then
+						if YlocX < 1 - map.locOffsetX then
 							YlocX = YlocX + worldSizeXt
 						end
 					end
 					if worldWrapY then
-						if XlocY > worldSizeYt then
+						if XlocY > worldSizeYt - map.locOffsetY then
 							XlocY = XlocY - worldSizeYt
 						end
-						if XlocY < 1 then
+						if XlocY < 1 - map.locOffsetY then
 							XlocY = XlocY + worldSizeYt
 						end
-						if YlocY > worldSizeYt then
+						if YlocY > worldSizeYt - map.locOffsetY then
 							YlocY = YlocY - worldSizeYt
 						end
-						if YlocY < 1 then
+						if YlocY < 1 - map.locOffsetY then
 							YlocY = YlocY + worldSizeYt
 						end
 					end
 				
-					if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+					if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 						breakX = true
 					end
-					if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+					if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 						breakY = true
 					end
 					if breakX and breakY then
@@ -3750,38 +3769,38 @@ M2.createMTE = function()
 					count = count + 1
 				
 					if worldWrapX then
-						if XlocX > worldSizeXt then
+						if XlocX > worldSizeXt - map.locOffsetX then
 							XlocX = XlocX - worldSizeXt
 						end
-						if XlocX < 1 then
+						if XlocX < 1 - map.locOffsetX then
 							XlocX = XlocX + worldSizeXt
 						end
-						if YlocX > worldSizeXt then
+						if YlocX > worldSizeXt - map.locOffsetX then
 							YlocX = YlocX - worldSizeXt
 						end
-						if YlocX < 1 then
+						if YlocX < 1 - map.locOffsetX then
 							YlocX = YlocX + worldSizeXt
 						end
 					end
 					if worldWrapY then
-						if XlocY > worldSizeYt then
+						if XlocY > worldSizeYt - map.locOffsetY then
 							XlocY = XlocY - worldSizeYt
 						end
-						if XlocY < 1 then
+						if XlocY < 1 - map.locOffsetY then
 							XlocY = XlocY + worldSizeYt
 						end
-						if YlocY > worldSizeYt then
+						if YlocY > worldSizeYt - map.locOffsetY then
 							YlocY = YlocY - worldSizeYt
 						end
-						if YlocY < 1 then
+						if YlocY < 1 - map.locOffsetY then
 							YlocY = YlocY + worldSizeYt
 						end
 					end
 				
-					if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+					if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 						breakX = true
 					end
-					if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+					if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 						breakY = true
 					end
 					if breakX and breakY then
@@ -3937,38 +3956,38 @@ M2.createMTE = function()
 					count = count + 1
 				
 					if worldWrapX then
-						if XlocX > worldSizeXt then
+						if XlocX > worldSizeXt - map.locOffsetX then
 							XlocX = XlocX - worldSizeXt
 						end
-						if XlocX < 1 then
+						if XlocX < 1 - map.locOffsetX then
 							XlocX = XlocX + worldSizeXt
 						end
-						if YlocX > worldSizeXt then
+						if YlocX > worldSizeXt - map.locOffsetX then
 							YlocX = YlocX - worldSizeXt
 						end
-						if YlocX < 1 then
+						if YlocX < 1 - map.locOffsetX then
 							YlocX = YlocX + worldSizeXt
 						end
 					end
 					if worldWrapY then
-						if XlocY > worldSizeYt then
+						if XlocY > worldSizeYt - map.locOffsetY then
 							XlocY = XlocY - worldSizeYt
 						end
-						if XlocY < 1 then
+						if XlocY < 1 - map.locOffsetY then
 							XlocY = XlocY + worldSizeYt
 						end
-						if YlocY > worldSizeYt then
+						if YlocY > worldSizeYt - map.locOffsetY then
 							YlocY = YlocY - worldSizeYt
 						end
-						if YlocY < 1 then
+						if YlocY < 1 - map.locOffsetY then
 							YlocY = YlocY + worldSizeYt
 						end
 					end
 				
-					if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+					if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 						breakX = true
 					end
-					if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+					if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 						breakY = true
 					end
 					if breakX and breakY then
@@ -4123,38 +4142,38 @@ M2.createMTE = function()
 					count = count + 1
 				
 					if worldWrapX then
-						if XlocX > worldSizeXt then
+						if XlocX > worldSizeXt - map.locOffsetX then
 							XlocX = XlocX - worldSizeXt
 						end
-						if XlocX < 1 then
+						if XlocX < 1 - map.locOffsetX then
 							XlocX = XlocX + worldSizeXt
 						end
-						if YlocX > worldSizeXt then
+						if YlocX > worldSizeXt - map.locOffsetX then
 							YlocX = YlocX - worldSizeXt
 						end
-						if YlocX < 1 then
+						if YlocX < 1 - map.locOffsetX then
 							YlocX = YlocX + worldSizeXt
 						end
 					end
 					if worldWrapY then
-						if XlocY > worldSizeYt then
+						if XlocY > worldSizeYt - map.locOffsetY then
 							XlocY = XlocY - worldSizeYt
 						end
-						if XlocY < 1 then
+						if XlocY < 1 - map.locOffsetY then
 							XlocY = XlocY + worldSizeYt
 						end
-						if YlocY > worldSizeYt then
+						if YlocY > worldSizeYt - map.locOffsetY then
 							YlocY = YlocY - worldSizeYt
 						end
-						if YlocY < 1 then
+						if YlocY < 1 - map.locOffsetY then
 							YlocY = YlocY + worldSizeYt
 						end
 					end
 				
-					if XlocX < 1 or XlocX > worldSizeXt or XlocY < 1 or XlocY > worldSizeYt then
+					if XlocX < 1 - map.locOffsetX or XlocX > worldSizeXt - map.locOffsetX or XlocY < 1 - map.locOffsetY or XlocY > worldSizeYt - map.locOffsetY then
 						breakX = true
 					end
-					if YlocX < 1 or YlocX > worldSizeXt or YlocY < 1 or YlocY > worldSizeYt then
+					if YlocX < 1 - map.locOffsetX or YlocX > worldSizeXt - map.locOffsetX or YlocY < 1 - map.locOffsetY or YlocY > worldSizeYt - map.locOffsetY then
 						breakY = true
 					end
 					if breakX and breakY then
@@ -4318,38 +4337,40 @@ M2.createMTE = function()
 			cameraLocY = cameraLocY
 		end
 		local toggleBreak = false
-		if locX < 1 or locX > map.layers[layer].width then
+		
+		if locX < 1 - map.locOffsetX or locX > map.layers[layer].width - map.locOffsetX then
 			if not layerWrapX[layer] then
 				toggleBreak = true
 			end
 		end
-		if locY < 1 or locY > map.layers[layer].height then
+		if locY < 1 - map.locOffsetY or locY > map.layers[layer].height - map.locOffsetY then
 			if not layerWrapY[layer] then
 				toggleBreak = true
 			end
 		end
 		
 		if not toggleBreak then
-			while locX < 1 do
+			if locX < 1 - map.locOffsetX then
 				locX = locX + map.layers[layer].width
 			end
-			while locX > map.layers[layer].width do
+			if locX > map.layers[layer].width - map.locOffsetX then
 				locX = locX - map.layers[layer].width
 			end				
-		
-			while locY < 1 do
+			
+			if locY < 1 - map.locOffsetY then
 				locY = locY + map.layers[layer].height
 			end
-			while locY > map.layers[layer].height do
+			if locY > map.layers[layer].height - map.locOffsetY then
 				locY = locY - map.layers[layer].height
 			end
-			
 			local isOwner = true
 			if not tile then
 				tile = map.layers[layer].world[locX][locY]
 			end
+
 			local temp = nil
-			if tileObjects[layer][locX] and tileObjects[layer][locX][locY] then
+			if tileObjects[layer][locX] and tileObjects[layer][locX][locY] then		
+				--print("*", locX, locY, layer)		
 				temp = tileObjects[layer][locX][locY].index
 				if parameters.owner then
 					isOwner = false
@@ -4357,15 +4378,165 @@ M2.createMTE = function()
 						isOwner = true
 					end
 				end
+				--print("do9")
 				if isOwner then
-					if not tileObjects[layer][locX][locY].noDraw then
-						if tileObjects[layer][locX][locY].sync then
-							animatedTiles[tileObjects[layer][locX][locY]] = nil
+					if dont then
+						if not tileObjects[layer][locX][locY].noDraw then
+							if tileObjects[layer][locX][locY].sync then
+								animatedTiles[tileObjects[layer][locX][locY]] = nil
+							end
+							tileObjects[layer][locX][locY]:removeSelf()
+							totalRects[layer] = totalRects[layer] - 1
 						end
-						tileObjects[layer][locX][locY]:removeSelf()
-						totalRects[layer] = totalRects[layer] - 1
 					end
-					tileObjects[layer][locX][locY] = nil
+					
+					local frameIndex = map.layers[layer].world[locX][locY]
+					local tileSetIndex = 1
+					for i = 1, #map.tilesets, 1 do
+						if frameIndex >= map.tilesets[i].firstgid then
+							tileSetIndex = i
+						else
+							break
+						end
+					end
+					
+					if tile == -1 then
+						--print("do7")
+						local mT = map.tilesets[tileSetIndex]
+						if mT.tilewidth > map.tilewidth or mT.tileheight > map.tileheight  then
+							--print("do2")
+							local width = math.ceil(mT.tilewidth / map.tilewidth)
+							local height = math.ceil(mT.tileheight / map.tileheight)
+						
+							local left, top, right, bottom = locX, locY - height + 1, locX + width - 1, locY
+						
+							if (left > masterGroup[layer].vars.camera[3] or right < masterGroup[layer].vars.camera[1]or
+							top > masterGroup[layer].vars.camera[4] or bottom < masterGroup[layer].vars.camera[2]) or parameters.forceCullLargeTile then
+								--print("do3")								
+								--[[
+								for lX = locX, locX + width - 1, 1 do
+									for lY = locY, locY - height + 1, -1 do
+										local lx = lX
+										local ly = lY
+										if lx > map.width then
+											lx = lx - map.width
+										elseif lx < 1 then
+											lx = lx + map.width
+										end
+										if ly > map.height then
+											ly = ly - map.height
+										elseif ly < 1 then
+											ly = ly + map.height
+										end
+								
+										if not map.layers[layer].largeTiles[lx] then
+											map.layers[layer].largeTiles[lx] = {}
+										end
+								
+										--mL.largeTiles[lx][ly] = {frameIndex, x, y}
+									end
+								end	
+								--print("offscreen")
+								]]--
+								--print("offscreen")
+								if not tileObjects[layer][locX][locY].noDraw then
+									if tileObjects[layer][locX][locY].sync then
+										animatedTiles[tileObjects[layer][locX][locY]] = nil
+									end
+									tileObjects[layer][locX][locY]:removeSelf()
+									totalRects[layer] = totalRects[layer] - 1
+								end
+								tileObjects[layer][locX][locY] = nil
+														
+							else
+								--print("not offscreen")
+							end
+						else
+							if not tileObjects[layer][locX][locY].noDraw then
+								if tileObjects[layer][locX][locY].sync then
+									animatedTiles[tileObjects[layer][locX][locY]] = nil
+								end
+								tileObjects[layer][locX][locY]:removeSelf()
+								totalRects[layer] = totalRects[layer] - 1
+							end
+							tileObjects[layer][locX][locY] = nil
+						end
+					else
+						--print("do8")
+						if not tileObjects[layer][locX][locY].noDraw then
+							if tileObjects[layer][locX][locY].sync then
+								animatedTiles[tileObjects[layer][locX][locY]] = nil
+							end
+							tileObjects[layer][locX][locY]:removeSelf()
+							totalRects[layer] = totalRects[layer] - 1
+						end
+						tileObjects[layer][locX][locY] = nil
+					end	
+					--tileObjects[layer][locX][locY] = nil
+					
+					--[[
+					if tile == -1 then
+						local frameIndex = map.layers[layer].world[locX][locY]
+						local tileSetIndex = 1
+						for i = 1, #map.tilesets, 1 do
+							if frameIndex >= map.tilesets[i].firstgid then
+								tileSetIndex = i
+							else
+								break
+							end
+						end
+						
+						local mT = map.tilesets[tileSetIndex]
+						if mT.tilewidth > map.tilewidth or mT.tileheight > map.tileheight  then
+							local width = math.ceil(mT.tilewidth / map.tilewidth)
+							local height = math.ceil(mT.tileheight / map.tileheight)
+							
+							local left, top, right, bottom = locX, locY - height + 1, locX + width - 1, locY
+							
+							if left > masterGroup[layer].vars.camera[3] or right < masterGroup[layer].vars.camera[1]or
+							top > masterGroup[layer].vars.camera[4] or bottom < masterGroup[layer].vars.camera[2] then								
+								for lX = locX, locX + width - 1, 1 do
+									for lY = locY, locY - height + 1, -1 do
+										local lx = lX
+										local ly = lY
+										if lx > map.width then
+											lx = lx - map.width
+										elseif lx < 1 then
+											lx = lx + map.width
+										end
+										if ly > map.height then
+											ly = ly - map.height
+										elseif ly < 1 then
+											ly = ly + map.height
+										end
+									
+										if not map.layers[layer].largeTiles[lx] then
+											map.layers[layer].largeTiles[lx] = {}
+										end
+									
+										--mL.largeTiles[lx][ly] = {frameIndex, x, y}
+									end
+								end	
+								--print("offscreen")						
+							else
+								--print("not offscreen")
+							end
+									
+						end
+					else
+						local frameIndex = map.layers[layer].world[locX][locY]
+						local tileSetIndex = 1
+						for i = 1, #map.tilesets, 1 do
+							if frameIndex >= map.tilesets[i].firstgid then
+								tileSetIndex = i
+							else
+								break
+							end
+						end
+
+					
+					end
+					]]--
 				else
 					tile = 0
 				end
@@ -4373,7 +4544,9 @@ M2.createMTE = function()
 			if tile == 0 and isOwner then
 				map.layers[layer].world[locX][locY] = tile
 			end
+			
 			if tile > 0 then
+				--print("do", locX, locY, layer)
 				map.layers[layer].world[locX][locY] = tile	
 				count556 = count556 + 1
 				local levelPosX = locX * map.tilewidth - (map.tilewidth / 2)
@@ -4469,7 +4642,25 @@ M2.createMTE = function()
 				end
 				
 				if render then
+					--[[
+					if map.layers[layer].properties then
+						if not map.tilesets[tileSetIndex].tileproperties then
+							map.tilesets[tileSetIndex].tileproperties = {}
+						end
+						if not map.tilesets[tileSetIndex].tileproperties[tileStr] then
+							map.tilesets[tileSetIndex].tileproperties[tileStr] = {}
+						end
+	
+						for key,value in pairs(map.layers[layer].properties) do
+							if not map.tilesets[tileSetIndex].tileproperties[tileStr][key] then
+								map.tilesets[tileSetIndex].tileproperties[tileStr][key] = value
+							end
+						end
+					end
+					]]--
+					--print("do")
 					if tileProps then
+						--print("do")
 						if not tileProps["noDraw"] and not map.tilesets[tileSetIndex].properties["noDraw"] and not map.layers[layer].properties["noDraw"] then
 							if tileProps["animFrames"] then
 								tileObjects[layer][locX][locY] = display.newSprite(masterGroup[layer][1],tileSets[tileSetIndex], tileProps["sequenceData"])
@@ -4504,6 +4695,8 @@ M2.createMTE = function()
 								tileObjects[layer][locX][locY].fill.effect = "composite.normalMapWith1PointLight"
 								tileObjects[layer][locX][locY].normalMap = true
 							else
+								--print(layer, locX, locY)
+								--print(tileObjects[layer][locX])
 								tileObjects[layer][locX][locY] = display.newImageRect(masterGroup[layer][1], 
 									tileSets[tileSetIndex], frameIndex, tempScaleX, tempScaleY
 								)
@@ -4516,6 +4709,8 @@ M2.createMTE = function()
 					local rect = tileObjects[layer][locX][locY]
 					rect.x = levelPosX + offsetX
 					rect.y = levelPosY - offsetY
+					--print(masterGroup[1], masterGroup[2], masterGroup[3], masterGroup[4], masterGroup[5], masterGroup[6], masterGroup[7])
+					--print(locX, locY, tempScaleX, tempScaleY, rect.x, rect.y, masterGroup[layer].x, masterGroup[layer].y)
 					rect.levelPosX = rect.x
 					rect.levelPosY = rect.y
 					rect.layer = layer
@@ -4721,8 +4916,24 @@ M2.createMTE = function()
 																shape = shape2,
 																filter = filter
 								})
-								tempObjects[#tempObjects].isAwake = physicsData.layer[layer].isAwake
-								tempObjects[#tempObjects].isBodyActive = physicsData.layer[layer].isActive
+								if rect.properties and rect.properties.isAwake then
+									if rect.properties.isAwake == "true" then
+										tempObjects[#tempObjects].isAwake = true
+									else
+										tempObjects[#tempObjects].isAwake = false
+									end
+								else
+									tempObjects[#tempObjects].isAwake = physicsData.layer[layer].isAwake
+								end
+								if rect.properties and rect.properties.isBodyActive then
+									if rect.properties.isBodyActive == "true" then
+										tempObjects[#tempObjects].isBodyActive = true
+									else
+										tempObjects[#tempObjects].isBodyActive = false
+									end
+								else
+									tempObjects[#tempObjects].isBodyActive = physicsData.layer[layer].isActive
+								end
 							end
 							if tempObjects[#tempObjects].sync then
 								tempObjects[#tempObjects]:setSequence("null")
@@ -4739,14 +4950,25 @@ M2.createMTE = function()
 							bounce = physicsData.layer[layer].defaultBounce
 							radius = physicsData.layer[layer].defaultRadius
 							filter = physicsData.layer[layer].defaultFilter
-
-							if tileProps then
-								if tileProps["physics"] == "true" or 
+							
+							if map.layers[layer].properties["forceDefaultPhysics"] or tileProps then
+								if map.layers[layer].properties["forceDefaultPhysics"] or
+								tileProps["physics"] == "true" or 
 								tileProps["shapeID"] then
+									local tempTileProps = false
+									if not tileProps then
+										tileProps = {}
+										tempTileProps = true
+									end
+									local scaleFactor = 1
+									
 									local data = nil
 									if tileProps["physicsSource"] then
+										if tileProps["physicsSourceScale"] then
+											scaleFactor = tonumber(tileProps["physicsSourceScale"])
+										end
 										local source = tileProps["physicsSource"]:gsub(".lua", "")
-										data = require(source).physicsData(1)
+										data = require(source).physicsData(scaleFactor)
 										bodyType = "dynamic"
 									end
 									if map.tilesets[tileSetIndex].physicsData then
@@ -4836,8 +5058,24 @@ M2.createMTE = function()
 											})
 										end
 										map.layers[layer].world[locX][locY] = 0
-										tempObjects[#tempObjects].isAwake = physicsData.layer[layer].isAwake
-										tempObjects[#tempObjects].isBodyActive = physicsData.layer[layer].isActive
+										if rect.properties and rect.properties.isAwake then
+											if rect.properties.isAwake == "true" then
+												tempObjects[#tempObjects].isAwake = true
+											else
+												tempObjects[#tempObjects].isAwake = false
+											end
+										else
+											tempObjects[#tempObjects].isAwake = physicsData.layer[layer].isAwake
+										end
+										if rect.properties and rect.properties.isBodyActive then
+											if rect.properties.isBodyActive == "true" then
+												tempObjects[#tempObjects].isBodyActive = true
+											else
+												tempObjects[#tempObjects].isBodyActive = false
+											end
+										else
+											tempObjects[#tempObjects].isBodyActive = physicsData.layer[layer].isActive
+										end
 										if tempObjects[#tempObjects].sync then
 											tempObjects[#tempObjects]:setSequence("null")
 											tempObjects[#tempObjects]:play()
@@ -4862,8 +5100,27 @@ M2.createMTE = function()
 											})
 										end
 										rect.physics = true
-										rect.isAwake = physicsData.layer[layer].isAwake
-										rect.isBodyActive = physicsData.layer[layer].isActive
+										if rect.properties and rect.properties.isAwake then
+											if rect.properties.isAwake == "true" then
+												rect.isAwake = true
+											else
+												rect.isAwake = false
+											end
+										else
+											rect.isAwake = physicsData.layer[layer].isAwake
+										end
+										if rect.properties and rect.properties.isBodyActive then
+											if rect.properties.isBodyActive == "true" then
+												rect.isBodyActive = true
+											else
+												rect.isBodyActive = false
+											end
+										else
+											rect.isBodyActive = physicsData.layer[layer].isActive
+										end
+									end
+									if tempTileProps then
+										tileProps = nil
 									end
 								end
 							end
@@ -4874,7 +5131,7 @@ M2.createMTE = function()
 					if listenerCheck then
 						for key,value in pairs(propertyListeners) do
 							if tileProps[key] then
-								local event = { name = key, target = listenerCheck, propValue = tileProps[key] }
+								local event = { name = key, target = listenerCheck}
 								masterGroup:dispatchEvent( event )
 							end
 						end
@@ -4912,6 +5169,7 @@ M2.createMTE = function()
 		if not src then
 			src = map.tilesets[index].image
 			tileSets[index] = graphics.newImageSheet(src, options)
+			
 			if not tileSets[index] then
 				--get tileset name with extension
 				local srcString = src
@@ -5031,7 +5289,7 @@ M2.createMTE = function()
 			if not tileSets[index] then
 				loadedTileSets[name][2] = "FILE NOT FOUND"
 			end
-
+			
 			if tsx then
 				--LOAD TILESET TSX and APPLY VALUES TO MAP.TILESETS
 				local temp = xml.loadFile(tsx)
@@ -5116,6 +5374,18 @@ M2.createMTE = function()
 		local lineWidth = 0
 		local fillColor = {0, 0, 0, 0}
 		local layer = i
+		
+		--[[
+if map.layers[layer].properties then
+	for key,value in pairs(map.layers[layer].properties) do
+		if not object.properties[key] then
+			object.properties[key] = value
+		end
+	end
+end
+		]]--
+		
+		
 		if object.properties.layer then
 			layer = tonumber(object.properties.layer)
 		end
@@ -5391,8 +5661,24 @@ M2.createMTE = function()
 															filter = filter
 							})
 						end
-						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						if object.properties.isAwake then 
+							if object.properties.isAwake == "true" then
+								sprites[spriteName].isAwake = true
+							else
+								sprites[spriteName].isAwake = false
+							end
+						else
+							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						end
+						if object.properties.isBodyActive then
+							if object.properties.isBodyActive == "true" then
+								sprites[spriteName].isBodyActive = true
+							else
+								sprites[spriteName].isBodyActive = false
+							end
+						else
+							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						end
 					end
 				end
 			else
@@ -5429,7 +5715,32 @@ M2.createMTE = function()
 					spriteName = tempName
 				end
 				sprites[spriteName] = display.newImageRect(masterGroup[i], tileSets[tileSetIndex], frameIndex, map.tilewidth, map.tileheight)
+				
+				local centerX = object.x + (levelWidth * 0.5)
+				local centerY = object.y - (levelHeight * 0.5)
+				
+				if not object.rotation then
+					object.rotation = 0
+				end
+				
+				local width = map.tilewidth / 2
+				local height = map.tileheight / 2
+				
+				local hyp = (height) / math.sin(math.rad(45))
+				
+				local deltaX = hyp * math.sin(math.rad(45 + tonumber(object.rotation)))
+				local deltaY = hyp * math.cos(math.rad(45 + tonumber(object.rotation))) * -1
+				
+				centerX = object.x + deltaX
+				centerY = object.y + deltaY
+				
+				sprites[spriteName].rotation = tonumber(object.rotation)
+				--[[
 				local setup = {layer = layer, kind = "imageRect", levelPosX = object.x + (levelWidth * 0.5), levelPosY = object.y - (levelHeight * 0.5), 
+					levelWidth = levelWidth, levelHeight = levelHeight, offsetX = 0, offsetY = 0, name = spriteName
+				}
+				]]--
+				local setup = {layer = layer, kind = "imageRect", levelPosX = centerX, levelPosY = centerY, 
 					levelWidth = levelWidth, levelHeight = levelHeight, offsetX = 0, offsetY = 0, name = spriteName
 				}
 				if enablePhysics[i] then
@@ -5447,6 +5758,7 @@ M2.createMTE = function()
 											math.ceil(minY / map.tileheight), 
 											math.ceil(maxX / map.tilewidth), 
 											math.ceil(maxY / map.tileheight)}
+				
 				if enablePhysics[i] then
 					if object.properties.physics == "true" then
 						if not object.properties.shape or object.properties.shape == "auto" then
@@ -5459,10 +5771,30 @@ M2.createMTE = function()
 						end
 						physics.addBody(sprites[spriteName], bodyType, {density = density, friction = friction, bounce = bounce,
 														radius = radius, shape = shape2, filter = filter})
-						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						if object.properties.isAwake then
+							if object.properties.isAwake == "true" then
+								sprites[spriteName].isAwake = true
+							else
+								sprites[spriteName].isAwake = false
+							end
+						else
+							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						end
+						if object.properties.isBodyActive then
+							if object.properties.isBodyActive == "true" then
+								sprites[spriteName].isBodyActive = true
+							else
+								sprites[spriteName].isBodyActive = false
+							end
+						else
+							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						end
+						--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 					end
 				end
+				
+
+				
 			end
 		elseif object.ellipse then
 			listenerCheck = true	
@@ -5729,6 +6061,9 @@ M2.createMTE = function()
 					else
 						sprites[spriteName][sprites[spriteName].numChildren]:setFillColor(0, 0, 0, 0)
 					end
+					if object.rotation then
+						sprites[spriteName].rotation = tonumber(object.rotation)
+					end
 					local setup = {layer = layer, kind = "vector", levelPosX = object.x + width / 2, levelPosY = object.y + height / 2, 
 						levelWidth = width, levelHeight = height, sourceWidth = width, sourceHeight = height, offsetX = 0, offsetY = 0, name = spriteName
 					}
@@ -5756,8 +6091,27 @@ M2.createMTE = function()
 							end
 							physics.addBody(sprites[spriteName], bodyType, {density = density, friction = friction, bounce = bounce,
 															radius = radius, shape = shape2, filter = filter})
-							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+							
+							if object.properties.isAwake then
+								if object.properties.isAwake == "true" then
+									sprites[spriteName].isAwake = true
+								else
+									sprites[spriteName].isAwake = false
+								end
+							else
+								sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+							end
+							--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+							if object.properties.isBodyActive then
+								if object.properties.isBodyActive == "true" then
+									sprites[spriteName].isBodyActive = true
+								else
+									sprites[spriteName].isBodyActive = false
+								end
+							else
+								sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+							end
+							--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 						end
 					end
 				else
@@ -5782,6 +6136,11 @@ M2.createMTE = function()
 					else
 						sprites[spriteName][sprites[spriteName].numChildren]:setFillColor(0, 0, 0, 0)
 					end
+					
+					if object.rotation then
+						sprites[spriteName].rotation = tonumber(object.rotation)
+					end
+
 					local setup = {layer = layer, kind = "vector", levelPosX = object.x, levelPosY = object.y, 
 						levelWidth = width, levelHeight = height, sourceWidth = tempC, sourceHeight = tempC, offsetX = 0, offsetY = 0, name = spriteName
 					}
@@ -5852,8 +6211,26 @@ M2.createMTE = function()
 								physics.addBody(sprites[spriteName], bodyType, {density = density, friction = friction, bounce = bounce,
 																radius = radius, shape = shape2, filter = filter})
 							end
-							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+							if object.properties.isAwake then
+								if object.properties.isAwake == "true" then
+									sprites[spriteName].isAwake = true
+								else
+									sprites[spriteName].isAwake = false
+								end
+							else
+								sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+							end
+							--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+							if object.properties.isBodyActive then
+								if object.properties.isBodyActive == "true" then
+									sprites[spriteName].isBodyActive = true
+								else
+									sprites[spriteName].isBodyActive = false
+								end
+							else
+								sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+							end
+							--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 						end
 					end
 					--------
@@ -5934,7 +6311,7 @@ M2.createMTE = function()
 			
 				local endX = polygon2[n].x
 				local endY = polygon2[n].y			
-			
+				
 				if i == 1 then
 					display.newLine(sprites[spriteName], startX, startY, endX, endY)
 				else
@@ -5969,6 +6346,10 @@ M2.createMTE = function()
 			if map.orientation == 1 then
 				levelPosX = levelPosX + (worldScaleX * 0.5)
 				levelPosY = levelPosY + (worldScaleX * 0.5)
+			else
+				if object.rotation then
+					sprites[spriteName].rotation = tonumber(object.rotation)
+				end
 			end
 			local setup = {layer = layer, kind = "vector", levelPosX = levelPosX, levelPosY = levelPosY, 
 				levelWidth = width, levelHeight = height, sourceWidth = width, sourceHeight = height, offsetX = 0, offsetY = 0, name = spriteName
@@ -6091,8 +6472,26 @@ M2.createMTE = function()
 						physics.addBody(sprites[spriteName], bodyType, {density = density, friction = friction, bounce = bounce,
 														radius = radius, shape = shape2, filter = filter})
 					end
-					sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-					sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+					if object.properties.isAwake then
+						if object.properties.isAwake == "true" then
+							sprites[spriteName].isAwake = true
+						else
+							sprites[spriteName].isAwake = false
+						end
+					else
+						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+					end
+					--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+					if object.properties.isBodyActive then
+						if object.properties.isBodyActive == "true" then
+							sprites[spriteName].isBodyActive = true
+						else
+							sprites[spriteName].isBodyActive = false
+						end
+					else
+						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+					end
+					--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 				end
 			end	
 		elseif object.polyline then
@@ -6221,10 +6620,16 @@ M2.createMTE = function()
 			sprites[spriteName][sprites[spriteName].numChildren].strokeWidth = lineWidth
 			local levelPosX = object.x
 			local levelPosY = object.y
+			
 			if map.orientation == 1 then
 				levelPosX = levelPosX + (worldScaleX * 0.5)
 				levelPosY = levelPosY + (worldScaleX * 0.5)
+			else
+				if object.rotation then
+					sprites[spriteName].rotation = tonumber(object.rotation)
+				end
 			end
+				
 			local setup = {layer = layer, kind = "vector", levelPosX = levelPosX, levelPosY = levelPosY, 
 				levelWidth = width, levelHeight = height, sourceWidth = width, sourceHeight = height, offsetX = 0, offsetY = 0, name = spriteName
 			}
@@ -6252,8 +6657,26 @@ M2.createMTE = function()
 							radius = radius, shape = shape2, filter = filter
 						})
 					end
-					sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-					sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+					if object.properties.isAwake then
+						if object.properties.isAwake == "true" then
+							sprites[spriteName].isAwake = true
+						else
+							sprites[spriteName].isAwake = false
+						end
+					else
+						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+					end
+					--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+					if object.properties.isBodyActive then
+						if object.properties.isBodyActive == "true" then
+							sprites[spriteName].isBodyActive = true
+						else
+							sprites[spriteName].isBodyActive = false
+						end
+					else
+						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+					end
+					--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 				end
 			end
 		else --rectangle
@@ -6379,6 +6802,10 @@ M2.createMTE = function()
 			if map.orientation == 1 then
 				levelPosX = levelPosX + (worldScaleX * 0.5)
 				levelPosY = levelPosY + (worldScaleX * 0.5)
+			else
+				if object.rotation then
+					sprites[spriteName].rotation = tonumber(object.rotation)
+				end
 			end
 			local setup = {layer = layer, kind = "vector", levelPosX = levelPosX, levelPosY = levelPosY, 
 				levelWidth = width, levelHeight = height, sourceWidth = width, sourceHeight = height, offsetX = 0, offsetY = 0, name = spriteName
@@ -6511,8 +6938,26 @@ M2.createMTE = function()
 								radius = radius, shape = shape2, filter = filter
 							})
 						end
-						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						if object.properties.isAwake then
+							if object.properties.isAwake == "true" then
+								sprites[spriteName].isAwake = true
+							else
+								sprites[spriteName].isAwake = false
+							end
+						else
+							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						end
+						--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						if object.properties.isBodyActive then
+							if object.properties.isBodyActive == "true" then
+								sprites[spriteName].isBodyActive = true
+							else
+								sprites[spriteName].isBodyActive = false
+							end
+						else
+							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						end
+						--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 					else
 						if not object.properties.shape or object.properties.shape == "auto" then
 							local w = width
@@ -6522,8 +6967,26 @@ M2.createMTE = function()
 						physics.addBody(sprites[spriteName], bodyType, {density = density, friction = friction, bounce = bounce,
 							radius = radius, shape = shape2, filter = filter
 						})
-						sprites[spriteName].isAwake = physicsData.layer[i].isAwake
-						sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						if object.properties.isAwake then
+							if object.properties.isAwake == "true" then
+								sprites[spriteName].isAwake = true
+							else
+								sprites[spriteName].isAwake = false
+							end
+						else
+							sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						end
+						--sprites[spriteName].isAwake = physicsData.layer[i].isAwake
+						if object.properties.isBodyActive then
+							if object.properties.isBodyActive == "true" then
+								sprites[spriteName].isBodyActive = true
+							else
+								sprites[spriteName].isBodyActive = false
+							end
+						else
+							sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
+						end
+						--sprites[spriteName].isBodyActive = physicsData.layer[i].isActive
 					end
 				end
 			end
@@ -6534,6 +6997,9 @@ M2.createMTE = function()
 			sprites[spriteName].objectKey = ky
 			sprites[spriteName].objectLayer = layer
 			sprites[spriteName].bounds = nil
+			sprites[spriteName].properties = object.properties
+			sprites[spriteName].type = object.type
+			object.properties.wasDrawn = true
 			
 			if M.enableLighting then
 				if object.properties.lightSource then
@@ -6560,13 +7026,57 @@ M2.createMTE = function()
 				end
 			end
 			for key,value in pairs(objectDrawListeners) do
-				if object.name == key then
+				if object.name == key or key == "*" then
 					local event = { name = key, target = sprites[spriteName], object = object}
 					masterGroup:dispatchEvent( event )
 				end
 			end
 			
 			return sprites[spriteName]
+		end
+	end
+	
+	local drawCulledObjects = function(locX, locY, layer)
+		if map.layers[layer].extendedObjects then
+			if locX < 1 - map.locOffsetX then
+				locX = locX + map.layers[layer].width
+			end
+			if locX > map.layers[layer].width - map.locOffsetX then
+				locX = locX - map.layers[layer].width
+			end				
+			
+			if locY < 1 - map.locOffsetY then
+				locY = locY + map.layers[layer].height
+			end
+			if locY > map.layers[layer].height - map.locOffsetY then
+				locY = locY - map.layers[layer].height
+			end
+			
+			if map.layers[layer].extendedObjects[locX] and map.layers[layer].extendedObjects[locX][locY] then
+				for i = #map.layers[layer].extendedObjects[locX][locY], 1, -1 do
+					if map.layers[layer].extendedObjects[locX][locY][i] then
+						local objectLayer = map.layers[layer].extendedObjects[locX][locY][i][1]
+						local objectKey =  map.layers[layer].extendedObjects[locX][locY][i][2]
+						local object = map.layers[objectLayer].objects[objectKey]
+						if not object.properties.wasDrawn then
+							local sprite = drawObject(object, objectLayer, objectKey)
+							sprite.x = object.cullData[1]
+							sprite.y = object.cullData[2]
+							sprite.width = object.cullData[3]
+							sprite.height = object.cullData[4]
+							sprite.roation = object.cullData[5]
+						
+							for j = #object.cullData[6], 1, -1 do
+								local lx = object.cullData[6][j][1]
+								local ly = object.cullData[6][j][2]
+								local index = object.cullData[6][j][3]
+								map.layers[objectLayer].extendedObjects[lx][ly][index] = nil
+							end
+						end
+						map.layers[layer].extendedObjects[locX][locY][i] = nil
+					end
+				end
+			end
 		end
 	end
 	
@@ -6601,7 +7111,7 @@ M2.createMTE = function()
 		end
 	end
 	
-	M.drawObjects = function()
+	M.drawObjects = function(new)
 		local table = {}
 		for i = 1, #map.layers, 1 do
 			if map.layers[i].objects then
@@ -6609,8 +7119,30 @@ M2.createMTE = function()
 				for key,value in pairs(objects) do
 					if objects[key].gid or (objects[key].properties and 
 					(objects[key].properties.physics or objects[key].properties.lineColor or objects[key].properties.fillColor or objects[key].properties.lineWidth)) then
-						table[#table + 1] = drawObject(objects[key], i, key)
+						if not objects[key].properties or ((new and not objects[key].properties.wasDrawn) or not new) then
+							table[#table + 1] = drawObject(objects[key], i, key)
+						end
 					end
+					--[[
+					if new then
+						if not objects[key].properties then
+							if objects[key].gid or (objects[key].properties and 
+							(objects[key].properties.physics or objects[key].properties.lineColor or objects[key].properties.fillColor or objects[key].properties.lineWidth)) then
+								table[#table + 1] = drawObject(objects[key], i, key)
+							end
+						elseif not objects[key].properties.wasDrawn then
+							if objects[key].gid or (objects[key].properties and 
+							(objects[key].properties.physics or objects[key].properties.lineColor or objects[key].properties.fillColor or objects[key].properties.lineWidth)) then
+								table[#table + 1] = drawObject(objects[key], i, key)
+							end
+						end
+					else
+						if objects[key].gid or (objects[key].properties and 
+						(objects[key].properties.physics or objects[key].properties.lineColor or objects[key].properties.fillColor or objects[key].properties.lineWidth)) then
+							table[#table + 1] = drawObject(objects[key], i, key)
+						end
+					end
+					]]--
 				end
 			end
 		end
@@ -6621,6 +7153,7 @@ M2.createMTE = function()
 		local startTime=system.getTimer()
 		local storageToggle = false
 		local srcString = src
+		local directory = ""
 		local length = string.len(srcString)
 		local codes = {string.byte("/"), string.byte(".")}
 		local slashes = {}
@@ -6811,6 +7344,9 @@ M2.createMTE = function()
 							if label == "data" then
 								if props.encoding == "base64" then
 									triggerBase64 = true
+									if props.compression then
+										print("Error(loadMap): Layer data compression is not supported. MTE supports CSV, TMX, and Base64(uncompressed).")
+									end
 								elseif props.encoding == "csv" then
 									triggerCSV = true
 								elseif not props.encoding then
@@ -7145,7 +7681,7 @@ M2.createMTE = function()
 				print(src.." preloaded")			
 			else			
 				storageToggle = true
-				print(src.." already in storage")
+				print(src.." already in storage. Load Time: "..system.getTimer() - startTime)
 			end		
 		end
 		
@@ -7165,6 +7701,14 @@ M2.createMTE = function()
 			local globalID = {}
 			local prevLevel = "1"
 			for i = 1, #mapStorage[src].layers, 1 do
+				if type(mapStorage[src].layers[i].properties.forceDefaultPhysics) == "string" then
+					if mapStorage[src].layers[i].properties.forceDefaultPhysics == "true" then
+						mapStorage[src].layers[i].properties.forceDefaultPhysics = true
+					else
+						mapStorage[src].layers[i].properties.forceDefaultPhysics = false
+					end
+				end
+			
 				--DETECT WIDTH AND HEIGHT
 				if mapStorage[src].layers[i].properties.width then
 					mapStorage[src].layers[i].width = tonumber(mapStorage[src].layers[i].properties.width)
@@ -7435,6 +7979,1346 @@ M2.createMTE = function()
 	
 	end
 	
+	M.expandMapBounds = function(parameters)
+		local prevMapWidth, prevMapHeight = map.width, map.height
+		local prevMapOX, prevMapOY = map.locOffsetX, map.locOffsetY
+		
+		--[[
+		local mL = map.layers[object.objectLayer]
+		if tright - tleft < masterGroup[i].vars.camera[3] - masterGroup[i].vars.camera[1] then
+			if tbottom - ttop < masterGroup[i].vars.camera[4] - masterGroup[i].vars.camera[2] then
+				--four corners
+				print(tleft, ttop, tright, tbottom)
+				if not mL.extendedObjects[tleft][ttop] then
+					mL.extendedObjects[tleft][ttop] = {}
+				end
+				if not mL.extendedObjects[tright][ttop] then
+					mL.extendedObjects[tright][ttop] = {}
+				end
+				if not mL.extendedObjects[tleft][tbottom] then
+					mL.extendedObjects[tleft][tbottom] = {}
+				end
+				if not mL.extendedObjects[tright][tbottom] then
+					mL.extendedObjects[tright][tbottom] = {}
+				end
+				]]--
+									
+		if parameters.leftBound then
+			--left
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevOX = map.locOffsetX
+			local x = 1 - parameters.leftBound
+			map.locOffsetX = map.locOffsetX + x
+			map.width = map.width + x
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].width = map.layers[i].width + x
+				for locX = 1 - map.locOffsetX, 1 - prevOX - 1, 1 do
+					map.layers[i].world[locX] = {}
+					tileObjects[i][locX] = {}
+					if map.layers[i].extendedObjects then
+						map.layers[i].extendedObjects[locX] = {}
+					end
+					if enableFlipRotation then
+						map.layers[i].flipRotation[locX] = {}
+					end
+					for locY = 1, map.height, 1 do
+						map.layers[i].world[locX][locY - map.locOffsetY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.rightBound then
+			--right
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevWidth = map.width
+			local x = parameters.rightBound - (prevWidth - map.locOffsetX)
+			map.width = map.width + x
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].width = map.layers[i].width + x
+				for locX = (prevWidth - map.locOffsetX) + 1, (map.width - map.locOffsetX), 1 do
+					map.layers[i].world[locX] = {}
+					tileObjects[i][locX] = {}
+					if map.layers[i].extendedObjects then
+						map.layers[i].extendedObjects[locX] = {}
+					end
+					if enableFlipRotation then
+						map.layers[i].flipRotation[locX] = {}
+					end
+					for locY = 1, map.height, 1 do
+						map.layers[i].world[locX][locY - map.locOffsetY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.topBound then
+			--top
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevOY = map.locOffsetY
+			local y = 1 - parameters.topBound
+			map.locOffsetY = map.locOffsetY + y
+			map.height = map.height + y
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].height = map.layers[i].height + y
+				for locX = 1, map.width, 1 do
+					for locY = 1 - map.locOffsetY, 1 - prevOY - 1, 1 do
+						map.layers[i].world[locX - map.locOffsetX][locY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.bottomBound then
+			--bottom
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevHeight = map.height
+			local y = parameters.bottomBound - (prevHeight - map.locOffsetY)
+			map.height = map.height + y
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].height = map.layers[i].height + y
+				for locX = 1, map.width, 1 do
+					for locY = (prevHeight - map.locOffsetY) + 1, (map.height - map.locOffsetY), 1 do
+						map.layers[i].world[locX - map.locOffsetX][locY] = 0
+					end
+				end
+			end
+		end
+		
+		-------------------------
+		
+		if parameters.pushLeft and parameters.pushLeft > 0 then
+			--left
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevOX = map.locOffsetX
+			local x = parameters.pushLeft
+			map.locOffsetX = map.locOffsetX + x
+			map.width = map.width + x
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].width = map.layers[i].width + x
+				for locX = 1 - map.locOffsetX, 1 - prevOX - 1, 1 do
+					map.layers[i].world[locX] = {}
+					tileObjects[i][locX] = {}
+					if map.layers[i].extendedObjects then
+						map.layers[i].extendedObjects[locX] = {}
+					end
+					if enableFlipRotation then
+						map.layers[i].flipRotation[locX] = {}
+					end
+					for locY = 1, map.height, 1 do
+						map.layers[i].world[locX][locY - map.locOffsetY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.pushRight and parameters.pushRight > 0 then
+			--right
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevWidth = map.width
+			local x = parameters.pushRight
+			map.width = map.width + x
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].width = map.layers[i].width + x
+				--print((prevWidth - map.locOffsetX) + 1, (map.width - map.locOffsetX))
+				for locX = (prevWidth - map.locOffsetX) + 1, (map.width - map.locOffsetX), 1 do
+					map.layers[i].world[locX] = {}
+					tileObjects[i][locX] = {}
+					if map.layers[i].extendedObjects then
+						map.layers[i].extendedObjects[locX] = {}
+					end
+					if enableFlipRotation then
+						map.layers[i].flipRotation[locX] = {}
+					end
+					for locY = 1, map.height, 1 do
+						map.layers[i].world[locX][locY - map.locOffsetY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.pushUp and parameters.pushUp > 0 then
+			--top
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevOY = map.locOffsetY
+			local y = parameters.pushUp
+			map.locOffsetY = map.locOffsetY + y
+			map.height = map.height + y
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].height = map.layers[i].height + y
+				for locX = 1, map.width, 1 do
+					for locY = 1 - map.locOffsetY, 1 - prevOY - 1, 1 do
+						map.layers[i].world[locX - map.locOffsetX][locY] = 0
+					end
+				end
+			end
+		end
+		
+		if parameters.pushDown and parameters.pushDown > 0 then
+			--bottom
+			prevMapWidth = map.width
+			prevMapHeight = map.height
+			prevMapOX = map.locOffsetX
+			prevMapOY = map.locOffsetY
+			local prevHeight = map.height
+			local y = parameters.pushDown
+			map.height = map.height + y
+			
+			for i = 1, #map.layers, 1 do
+				map.layers[i].height = map.layers[i].height + y
+				for locX = 1, map.width, 1 do
+					for locY = (prevHeight - map.locOffsetY) + 1, (map.height - map.locOffsetY), 1 do
+						map.layers[i].world[locX - map.locOffsetX][locY] = 0
+					end
+				end
+			end
+		end 
+		
+		--[[
+		for i = 1, #map.layers, 1 do
+			for x = 1 - map.loxOffsetX
+			map.layers[i].extendedObjects
+		end
+		]]--
+		
+		if M.enableSpriteSorting then
+			for i = 1, #map.layers, 1 do
+				if map.layers[i].properties.spriteLayer then
+					if masterGroup[i][2].depthBuffer then
+						if masterGroup[i][2].numChildren < map.height * M.spriteSortResolution then
+							for j = masterGroup[i][2].numChildren, map.height * M.spriteSortResolution , 1 do
+								local temp = display.newGroup()
+								temp.layer = i
+								temp.isDepthBuffer = true
+								masterGroup[i][2]:insert(temp)
+							end
+						end
+					end
+				end
+			end
+		end
+		
+		--[[
+		for i = 1, #map.layers, 1 do
+			for x = 1, map.width, 1 do
+				if map.layers[i].largeTiles[x] then
+					for y = 1, map.height, 1 do						
+						if map.layers[i].largeTiles[x][y] then
+							for j = 1, #map.layers[i].largeTiles[x][y], 1 do
+								local frameIndex = map.layers[i].largeTiles[x][y][j][1]
+								local locX = map.layers[i].largeTiles[x][y][j][2]
+								local locY = map.layers[i].largeTiles[x][y][j][3]
+								
+								
+								local frameIndex = frameIndex
+								local tileSetIndex = 1
+								for i = 1, #map.tilesets, 1 do
+									if frameIndex >= map.tilesets[i].firstgid then
+										tileSetIndex = i
+									else
+										break
+									end
+								end
+								local mT = map.tilesets[tileSetIndex]
+								
+								local width = math.ceil(mT.tilewidth / map.tilewidth)
+								local height = math.ceil(mT.tileheight / map.tileheight)
+								
+								print("do", x, y, frameIndex, locX, locY, width, height)
+							end
+							
+						end
+					end
+				end
+			end
+		end
+		]]--
+		
+		for i = 1, #map.layers, 1 do
+			for x = 1 - prevMapOX, prevMapWidth - prevMapOX, 1 do
+				for y = 1 - prevMapOY, prevMapHeight - prevMapOY, 1 do
+					if map.layers[i].largeTiles[x] and map.layers[i].largeTiles[x][y] then
+						for j = #map.layers[i].largeTiles[x][y], 1, -1 do
+							local frameIndex = map.layers[i].largeTiles[x][y][j][1]
+							local locX = map.layers[i].largeTiles[x][y][j][2]
+							local locY = map.layers[i].largeTiles[x][y][j][3]
+							
+							local frameIndex = frameIndex
+							local tileSetIndex = 1
+							for i = 1, #map.tilesets, 1 do
+								if frameIndex >= map.tilesets[i].firstgid then
+									tileSetIndex = i
+								else
+									break
+								end
+							end
+							local mT = map.tilesets[tileSetIndex]
+							
+							local width = math.ceil(mT.tilewidth / map.tilewidth)
+							local height = math.ceil(mT.tileheight / map.tileheight)
+
+							local left = locX
+							if left < 1 - prevMapOX then
+								left = left + prevMapWidth
+							end
+							if left > prevMapWidth - prevMapOX then
+								left = left - prevMapWidth
+							end		
+							
+							local top = locY - height + 1
+							if top < 1 - prevMapOY then
+								top = top + prevMapHeight
+							end
+							if top > prevMapHeight - prevMapOY then
+								top = top - prevMapHeight
+							end
+							
+							local right = locX + width - 1
+							if right < 1 - prevMapOX then
+								right = right + prevMapWidth
+							end
+							if right > prevMapWidth - prevMapOX then
+								right = right - prevMapWidth
+							end	
+							
+							local bottom = locY
+							if bottom < 1 - prevMapOY then
+								bottom = bottom + prevMapHeight
+							end
+							if bottom > prevMapHeight - prevMapOY then
+								bottom = bottom - prevMapHeight
+							end
+							
+							local aTop, aRight = nil, nil
+							if right < left then
+								aRight = right + prevMapWidth
+							end
+							if top > bottom then
+								aTop = top - prevMapHeight
+							end
+								
+							local lx, ly = x, y
+							
+							if lx < locX then
+								lx = lx + prevMapWidth
+							end
+							if ly > locY then
+								ly = ly - prevMapHeight
+							end
+							
+							--print(x, y, lx, ly)
+							
+							if lx ~= x or ly ~= y then
+								if not map.layers[i].largeTiles[lx] then
+									map.layers[i].largeTiles[lx] = {}
+								end
+								if not map.layers[i].largeTiles[lx][ly] then
+									map.layers[i].largeTiles[lx][ly] = {}
+								end
+								map.layers[i].largeTiles[lx][ly][#map.layers[i].largeTiles[lx][ly] + 1] = {frameIndex, locX, locY}
+								table.remove(map.layers[i].largeTiles[x][y], j)
+							end
+							
+						end
+					end
+				end
+			end
+		end
+		
+		if cheese then
+		for i = 1, #map.layers, 1 do
+			for x = 1 - map.locOffsetX, map.width - map.locOffsetX, 1 do
+				local lx = x
+				if lx < 1 - prevMapOX then
+					lx = lx + prevMapWidth
+				end
+				if lx > prevMapWidth - prevMapOX then
+					lx = lx - prevMapWidth
+				end				
+				if map.layers[i].largeTiles[lx] then
+					--print(1 - map.locOffsetY, map.height - map.locOffsetY)
+					for y = 1 - map.locOffsetY, map.height - map.locOffsetY, 1 do
+						local ly = y
+						if ly < 1 - prevMapOY then
+							ly = ly + prevMapHeight
+						end
+						if ly > prevMapHeight - prevMapOY then
+							ly = ly - prevMapHeight
+						end
+						--print(y)
+						if map.layers[i].largeTiles[lx][ly] then
+							--print(lx, ly)
+							for j = 1, #map.layers[i].largeTiles[lx][ly], 1 do
+								local frameIndex = map.layers[i].largeTiles[lx][ly][j][1]
+								local locX = map.layers[i].largeTiles[lx][ly][j][2]
+								local locY = map.layers[i].largeTiles[lx][ly][j][3]
+								
+								
+								local frameIndex = frameIndex
+								local tileSetIndex = 1
+								for i = 1, #map.tilesets, 1 do
+									if frameIndex >= map.tilesets[i].firstgid then
+										tileSetIndex = i
+									else
+										break
+									end
+								end
+								local mT = map.tilesets[tileSetIndex]
+								
+								local width = math.ceil(mT.tilewidth / map.tilewidth)
+								local height = math.ceil(mT.tileheight / map.tileheight)
+								
+								local left = locX
+								if left < 1 - prevMapOX then
+									left = left + prevMapWidth
+								end
+								if left > prevMapWidth - prevMapOX then
+									left = left - prevMapWidth
+								end		
+								
+								local top = locY - height + 1
+								if top < 1 - prevMapOY then
+									top = top + prevMapHeight
+								end
+								if top > prevMapHeight - prevMapOY then
+									top = top - prevMapHeight
+								end
+								
+								local right = locX + width - 1
+								if right < 1 - prevMapOX then
+									right = right + prevMapWidth
+								end
+								if right > prevMapWidth - prevMapOX then
+									right = right - prevMapWidth
+								end	
+								
+								local bottom = locY
+								if bottom < 1 - prevMapOY then
+									bottom = bottom + prevMapHeight
+								end
+								if bottom > prevMapHeight - prevMapOY then
+									bottom = bottom - prevMapHeight
+								end
+								
+								--[[
+								local left = lx
+								if left < 1 - prevMapOX then
+									left = left + prevMapWidth
+								end
+								if left > prevMapWidth - prevMapOX then
+									left = left - prevMapWidth
+								end		
+								
+								local top = ly
+								if top < 1 - prevMapOY then
+									top = top + prevMapHeight
+								end
+								if top > prevMapHeight - prevMapOY then
+									top = top - prevMapHeight
+								end
+								
+								local right = lx + width - 1
+								if right < 1 - prevMapOX then
+									right = right + prevMapWidth
+								end
+								if right > prevMapWidth - prevMapOX then
+									right = right - prevMapWidth
+								end	
+								
+								local bottom = ly + height - 1
+								if bottom < 1 - prevMapOY then
+									bottom = bottom + prevMapHeight
+								end
+								if bottom > prevMapHeight - prevMapOY then
+									bottom = bottom - prevMapHeight
+								end
+								]]--
+								
+								--[[
+								if top > bottom then
+									--correct top
+									
+									if prevMapHeight ~= map.height then
+										local aTop = top - prevMapHeight
+										for tY = aTop, bottom, 1 do
+											for tX = left, right, 1 do
+												if tY + prevMapHeight <= prevMapHeight then
+													if not map.layers[i].largeTiles[tX] then
+														map.layers[i].largeTiles[tX] = {}
+													end
+													if not map.layers[i].largeTiles[tX][tY] then
+														map.layers[i].largeTiles[tX][tY] = {}
+													end
+													map.layers[i].largeTiles[tX][tY][#map.layers[i].largeTiles[tX][tY] + 1] = {frameIndex, locX, locY}
+													map.layers[i].largeTiles[lx][ly][j] = nil
+												end
+											end
+										end
+									end
+								
+								
+								elseif right < left then
+									--correct right
+									
+									if prevMapWidth ~= map.width then
+										local aRight = right + prevMapWidth
+										for tX = left, aRight, 1 do
+											if tX - prevMapWidth > 0 then
+												for tY = top, bottom, 1 do
+													if not map.layers[i].largeTiles[tX] then
+														map.layers[i].largeTiles[tX] = {}
+													end
+													if not map.layers[i].largeTiles[tX][tY] then
+														map.layers[i].largeTiles[tX][tY] = {}
+													end
+													map.layers[i].largeTiles[tX][tY][#map.layers[i].largeTiles[tX][tY] + 1] = {frameIndex, locX, locY}
+													map.layers[i].largeTiles[lx][ly][j] = nil
+												end
+											end
+										end
+									end
+								end
+								]]--
+								
+								local aTop, aRight = nil, nil
+								if right < left then
+									aRight = right + prevMapWidth
+								end
+								if top > bottom then
+									aTop = top - prevMapHeight
+								end
+								if locX == 49 and locY == 1 then
+									--print(lx, ly, locX, locY, prevMapWidth, prevMapHeight)
+								end
+								print(x, y, lx, ly, locX, locY, "-------------")
+								
+								--[[
+								for tX = left, (aRight or right), 1 do
+									for tY = (aTop or top), bottom, 1 do
+										if locX == 49 and locY == 1 then
+											--print("    test", tX, map.width)
+										end
+										--print(tX, tY)
+										local tempX, tempY = tX, tY
+										if tempX > prevMapWidth then
+											tempX = tempX - prevMapWidth
+										end
+										if tempY < 1 then
+											tempY = tempY + prevMapHeight
+										end
+										--print(tX, tY, tempX, tempY, aRight, aTop)
+										
+										
+										local testX = (tX - prevMapWidth > 0 and aRight) and tX <= map.width
+										local testY = (tY + prevMapHeight <= prevMapHeight and aTop)
+										--if (tX - prevMapWidth > 0 and aRight) or (tY + prevMapHeight <= prevMapHeight and aTop) then
+										if testX or testY then
+											if not map.layers[i].largeTiles[tX] then
+												map.layers[i].largeTiles[tX] = {}
+											end
+											if not map.layers[i].largeTiles[tX][tY] then
+												map.layers[i].largeTiles[tX][tY] = {}
+											end
+											if locX == 49 and locY == 1 then
+												--print(">", tX, tY)
+											end
+											map.layers[i].largeTiles[tX][tY][#map.layers[i].largeTiles[tX][tY] + 1] = {frameIndex, locX, locY}
+											--map.layers[i].largeTiles[tX - prevMapWidth][tY + prevMapHeight][j] = nil
+											
+											
+											--if aRight and aTop then
+											if testX and testY then
+												if locX == 49 and locY == 1 then
+													--print("a", tX - prevMapWidth, tY + prevMapHeight)
+												end
+												--map.layers[i].largeTiles[tX - prevMapWidth][tY + prevMapHeight][j] = nil
+												table.remove(map.layers[i].largeTiles[tX - prevMapWidth][tY + prevMapHeight], j)
+											--elseif aRight then
+											elseif testX then
+												if locX == 49 and locY == 1 then
+													--print("b", tX - prevMapWidth, tY)
+												end
+												--map.layers[i].largeTiles[tX - prevMapWidth][tY][j] = nil
+												table.remove(map.layers[i].largeTiles[tX - prevMapWidth][tY], j)
+											--elseif aTop then
+											elseif testY then
+												if locX == 49 and locY == 1 then
+													--print("c", tX, tY + prevMapHeight)
+												end
+												local ttX = tX
+												if ttX > map.width then
+													ttX = ttX - map.width
+												end
+												--map.layers[i].largeTiles[tX][tY + prevMapHeight][j] = nil
+												table.remove(map.layers[i].largeTiles[ttX][tY + prevMapHeight], j)
+											end
+											
+										end
+										
+									end
+								end
+								]]--
+								
+								
+								--[[
+								local aTop, aRight = top, right
+								if top > bottom then
+									aTop = top - prevMapHeight
+									for tY = aTop, bottom, 1 do
+										if aRight < left then
+											aRight = aRight + prevMapWidth
+										end
+										for tX = left, aRight, 1 do
+											if tY + prevMapHeight <= prevMapHeight then
+												local tX2 = tX
+												if tX2 > prevMapWidth then
+													tX2 = tX2 - prevMapWidth
+												end
+												if not map.layers[i].largeTiles[tX2] then
+													map.layers[i].largeTiles[tX2] = {}
+												end
+												if not map.layers[i].largeTiles[tX2][tY] then
+													map.layers[i].largeTiles[tX2][tY] = {}
+												end
+												map.layers[i].largeTiles[tX2][tY][#map.layers[i].largeTiles[tX2][tY] + 1] = {frameIndex, locX, locY}
+												map.layers[i].largeTiles[lx][ly][j] = nil
+											end
+										end
+									end
+								end
+								
+								top = aTop
+								]]--
+								
+								--[[
+								if right < left then
+									local aRight = right + prevMapWidth
+									--print(aTop, bottom)
+									for tX = left, aRight, 1 do
+										for tY = top, bottom, 1 do
+											
+											if tX - prevMapWidth <= prevMapWidth then
+												if not map.layers[i].largeTiles[tX] then
+													map.layers[i].largeTiles[tX] = {}
+												end
+												if not map.layers[i].largeTiles[tX][tY] then
+													map.layers[i].largeTiles[tX][tY] = {}
+												end
+												--print(tX, tY)
+												map.layers[i].largeTiles[tX][tY][#map.layers[i].largeTiles[tX][tY] + 1] = {frameIndex, locX, locY}
+												map.layers[i].largeTiles[lx][ly][j] = nil
+											end
+										end
+									end
+									
+								end
+								]]--
+							end
+						end
+					end
+				end
+			end
+		end
+		end
+	end
+	
+	M.createLayer = function(layer)		
+		--CREATE LAYER
+		map.layers[layer] = {}
+		map.layers[layer].properties = {}
+
+		--CHECK AND LOAD SCALE AND LEVELS
+		if not map.layers[layer].properties then
+			map.layers[layer].properties = {}
+			map.layers[layer].properties.level = "1"
+			map.layers[layer].properties.scaleX = 1
+			map.layers[layer].properties.scaleY = 1
+			map.layers[layer].properties.parallaxX = 1
+			map.layers[layer].properties.parallaxY = 1
+		else
+			if not map.layers[layer].properties.level then
+				map.layers[layer].properties.level = "1"
+			end
+			if map.layers[layer].properties.scale then
+				map.layers[layer].properties.scaleX = map.layers[layer].properties.scale
+				map.layers[layer].properties.scaleY = map.layers[layer].properties.scale
+			else
+				if not map.layers[layer].properties.scaleX then
+					map.layers[layer].properties.scaleX = 1
+				end
+				if not map.layers[layer].properties.scaleY then
+					map.layers[layer].properties.scaleY = 1
+				end
+			end
+		end
+		map.layers[layer].properties.scaleX = tonumber(map.layers[layer].properties.scaleX)
+		map.layers[layer].properties.scaleY = tonumber(map.layers[layer].properties.scaleY)
+		if map.layers[layer].properties.parallax then
+			map.layers[layer].parallaxX = map.layers[layer].properties.parallax / map.layers[layer].properties.scaleX
+			map.layers[layer].parallaxY = map.layers[layer].properties.parallax / map.layers[layer].properties.scaleY
+		else
+			if map.layers[layer].properties.parallaxX then
+				map.layers[layer].parallaxX = map.layers[layer].properties.parallaxX / map.layers[layer].properties.scaleX
+			else
+				map.layers[layer].parallaxX = 1
+			end
+			if map.layers[layer].properties.parallaxY then
+				map.layers[layer].parallaxY = map.layers[layer].properties.parallaxY / map.layers[layer].properties.scaleY
+			else
+				map.layers[layer].parallaxY = 1
+			end
+		end	
+		--DETECT WIDTH AND HEIGHT
+		map.layers[layer].width = map.layers[refLayer].width
+		map.layers[layer].height = map.layers[refLayer].height
+		if map.layers[layer].properties.width then
+			map.layers[layer].width = tonumber(map.layers[layer].properties.width)
+		end
+		if map.layers[layer].properties.height then
+			map.layers[layer].height = tonumber(map.layers[layer].properties.height)
+		end
+		--DETECT LAYER WRAP
+		layerWrapX[layer] = worldWrapX
+		layerWrapY[layer] = worldWrapY
+		if map.layers[layer].properties.wrap then
+			if map.layers[layer].properties.wrap == "true" then
+				layerWrapX[layer] = true
+				layerWrapY[layer] = true
+			elseif map.layers[layer].properties.wrap == "false" then
+				layerWrapX[layer] = false
+				layerWrapY[layer] = false
+			end
+		end
+		if map.layers[layer].properties.wrapX then
+			if map.layers[layer].properties.wrapX == "true" then
+				layerWrapX[layer] = true
+			elseif map.layers[layer].properties.wrapX == "false" then
+				layerWrapX[layer] = false
+			end
+		end
+		if map.layers[layer].properties.wrapY then
+			if map.layers[layer].properties.wrapY == "true" then
+				layerWrapY[layer] = true
+			elseif map.layers[layer].properties.wrapY == "false" then
+				layerWrapY[layer] = false
+			end
+		end
+		--TOGGLE PARALLAX CROP
+		if map.layers[layer].properties.toggleParallaxCrop == "true" then
+			map.layers[layer].width = math.floor(map.layers[layer].width * map.layers[layer].parallaxX)
+			map.layers[layer].height = math.floor(map.layers[layer].height * map.layers[layer].parallaxY)
+			if map.layers[layer].width > map.width then
+				map.layers[layer].width = map.width
+			end
+			if map.layers[layer].height > map.height then
+				map.layers[layer].height = map.height
+			end
+		end		
+		--FIT BY PARALLAX / FIT BY SCALE
+		if map.layers[layer].properties.fitByParallax then
+			map.layers[layer].parallaxX = map.layers[layer].width / map.width
+			map.layers[layer].parallaxY = map.layers[layer].height / map.height
+		else
+			if map.layers[layer].properties.fitByScale then
+				map.layers[layer].properties.scaleX = (map.width * map.layers[layer].properties.parallaxX) / map.layers[layer].width
+				map.layers[layer].properties.scaleY = (map.height * map.layers[layer].properties.parallaxY) / map.layers[layer].height
+			end
+		end
+		if M.enableLighting then
+			if not map.layers[layer].lighting then
+				map.layers[layer].lighting = {}
+			end
+		end
+		
+		if M.enableLighting then
+			for x = 1, map.layers[layer].width, 1 do
+				if map.layers[layer].lighting then
+					map.layers[layer].lighting[x] = {}
+				end
+			end
+		end
+	
+		tileObjects[layer] = {}
+		for x = 1, map.layers[layer].width, 1 do
+			tileObjects[layer][x - map.locOffsetX] = {}
+		end
+		
+		map.layers[layer].world = {}
+		map.layers[layer].largeTiles = {}
+		if enableFlipRotation then
+			map.layers[layer].flipRotation = {}
+		end
+		for x = 1, map.width, 1 do
+			map.layers[layer].world[x - map.locOffsetX] = {}
+			if enableFlipRotation then
+				map.layers[layer].flipRotation[x - map.locOffsetX] = {}
+			end
+			for y = 1, map.height, 1 do
+				map.layers[layer].world[x - map.locOffsetX][y - map.locOffsetY] = 0
+			end
+		end
+		
+		--CREATE DISPLAY GROUPS
+		for k = masterGroup.numChildren + 1, layer, 1 do
+			if not masterGroup[k] then
+				local group = display.newGroup()
+				masterGroup:insert(group)
+				local tiles = display.newGroup()
+				tiles.tiles = true
+				masterGroup[k]:insert(tiles)
+				masterGroup[k].vars = {alpha = 1}
+				masterGroup[k].vars.layer = k	
+				masterGroup[k].x = masterGroup[refLayer].x
+				masterGroup[k].y = masterGroup[refLayer].y	
+			end
+		end
+		
+		if M.enableSpriteSorting then
+			if map.layers[layer].properties.spriteLayer then
+				masterGroup[layer].vars.depthBuffer = true
+				local depthBuffer = display.newGroup()
+				depthBuffer.depthBuffer = true
+				masterGroup[layer]:insert(depthBuffer)
+				for j = 1, map.height * M.spriteSortResolution, 1 do
+					local temp = display.newGroup()
+					temp.layer = layer
+					temp.isDepthBuffer = true
+					masterGroup[layer][2]:insert(temp)
+				end
+			end
+		end			
+		
+		local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
+		local cameraX, cameraY = masterGroup[layer]:contentToLocal(tempX, tempY)
+		local cameraLocX = math.ceil(cameraX / map.tilewidth)
+		local cameraLocY = math.ceil(cameraY / map.tileheight)
+		
+		totalRects[layer] = 0
+		local angle = masterGroup.rotation + masterGroup[layer].rotation
+		while angle >= 360 do
+			angle = angle - 360
+		end
+		while angle < 0 do
+			angle = angle + 360
+		end					
+		local topLeftT, topRightT, bottomRightT, bottomLeftT
+		topLeftT = {masterGroup.parent:localToContent(screenLeft - cullingMargin[1], screenTop - cullingMargin[2])}
+		topRightT = {masterGroup.parent:localToContent(screenRight + cullingMargin[3], screenTop - cullingMargin[2])}
+		bottomRightT = {masterGroup.parent:localToContent(screenRight + cullingMargin[3], screenBottom + cullingMargin[4])}
+		bottomLeftT = {masterGroup.parent:localToContent(screenLeft - cullingMargin[1], screenBottom + cullingMargin[4])}				
+		local topLeft, topRight, bottomRight, bottomLeft
+		if angle >= 0 and angle < 90 then
+			topLeft = {masterGroup[layer]:contentToLocal(topLeftT[1], topLeftT[2])}
+			topRight = {masterGroup[layer]:contentToLocal(topRightT[1], topRightT[2])}
+			bottomRight = {masterGroup[layer]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+			bottomLeft = {masterGroup[layer]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+		elseif angle >= 90 and angle < 180 then
+			topLeft = {masterGroup[layer]:contentToLocal(topRightT[1], topRightT[2])}
+			topRight = {masterGroup[layer]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+			bottomRight = {masterGroup[layer]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+			bottomLeft = {masterGroup[layer]:contentToLocal(topLeftT[1], topLeftT[2])}
+		elseif angle >= 180 and angle < 270 then
+			topLeft = {masterGroup[layer]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+			topRight = {masterGroup[layer]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+			bottomRight = {masterGroup[layer]:contentToLocal(topLeftT[1], topLeftT[2])}
+			bottomLeft = {masterGroup[layer]:contentToLocal(topRightT[1], topRightT[2])}
+		elseif angle >= 270 and angle < 360 then
+			topLeft = {masterGroup[layer]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+			topRight = {masterGroup[layer]:contentToLocal(topLeftT[1], topLeftT[2])}
+			bottomRight = {masterGroup[layer]:contentToLocal(topRightT[1], topRightT[2])}
+			bottomLeft = {masterGroup[layer]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+		end
+		local left, top, right, bottom
+		if topLeft[1] < bottomLeft[1] then
+			left = math.ceil(topLeft[1] / map.tilewidth)
+		else
+			left = math.ceil(bottomLeft[1] / map.tilewidth)
+		end
+		if topLeft[2] < topRight[2] then
+			top = math.ceil(topLeft[2] / map.tileheight)
+		else
+			top = math.ceil(topRight[2] / map.tileheight)
+		end
+		if topRight[1] > bottomRight[1] then
+			right = math.ceil(topRight[1] / map.tilewidth)
+		else
+			right = math.ceil(bottomRight[1] / map.tilewidth)
+		end
+		if bottomRight[2] > bottomLeft[2] then
+			bottom = math.ceil(bottomRight[2] / map.tileheight)
+		else
+			bottom = math.ceil(bottomLeft[2] / map.tileheight)
+		end				
+		masterGroup[layer].vars.camera = {left, top, right, bottom}	
+	end
+	
+	M.appendMap = function(src, dir, locX, locY, layer, overwrite)
+		local layer = layer
+		if not layer then
+			layer = 1
+		end
+		
+		local srcString = src
+		local directory = ""
+		local length = string.len(srcString)
+		local codes = {string.byte("/"), string.byte(".")}
+		local slashes = {}
+		local periods = {}
+		for i = 1, length, 1 do
+			local test = string.byte(srcString, i)
+			if test == codes[1] then
+				slashes[#slashes + 1] = i
+			elseif test == codes[2] then
+				periods[#periods + 1] = i
+			end
+		end
+		if #slashes > 0 then
+			srcStringExt = string.sub(srcString, slashes[#slashes] + 1)
+			directory = string.sub(srcString, 1, slashes[#slashes])
+		else
+			srcStringExt = srcString
+		end
+		if #periods > 0 then
+			if periods[#periods] >= length - 6 then
+				srcString = string.sub(srcString, (slashes[#slashes] or 0) + 1, (periods[#periods] or 0) - 1)
+			else
+				srcString = srcStringExt
+			end
+		else
+			srcString = srcStringExt
+		end
+		local detectJsonExt = string.find(srcStringExt, ".json")
+		if string.len(srcStringExt) ~= string.len(srcString) then
+			if not detectJsonExt then
+				--print("ERROR: "..src.." is not a Json file.")
+			end
+		else
+			src = src..".json"
+			detectJsonExt = true
+		end	
+		local path
+		local base
+		if dir == "Documents" then
+			debugText = "Directory = DocumentsDirectory"
+			path = system.pathForFile(src, system.DocumentsDirectory)
+			base = system.DocumentsDirectory
+		elseif dir == "Temporary" then
+			debugText = "Directory = TemporaryDirectory"
+			path = system.pathForFile(src, system.TemporaryDirectory)
+			base = system.TemporaryDirectory
+		elseif not dir or dir == "Resource" then
+			debugText = "Directory = ResourceDirectory"
+			path = system.pathForFile(src, system.ResourceDirectory)
+			base = system.ResourceDirectory
+		end	
+		
+		M.preloadMap(src, dir)
+		
+		--TILESETS
+		--[[
+		Loop through new map's tilesets and compare to parent map. If tileset already exists,
+		adjust new maps tileID's to conform with the index of parent map's tileset.
+		]]--
+		if not map.adjustGID[src] then
+			map.adjustGID[src] = {}
+		end
+		for i = 1, #mapStorage[src].tilesets, 1 do			
+			local detect = false
+			for j = 1, #map.tilesets, 1 do
+				if map.tilesets[j].name == mapStorage[src].tilesets[i].name then
+					detect = j
+				end
+			end
+			
+			if detect then
+				--PROCESS TILE PROPERTIES
+				if mapStorage[src].tilesets[i].tileproperties then
+					if not map.tilesets[detect].tileproperties then
+						map.tilesets[detect].tileproperties = mapStorage[src].tilesets[i].tileproperties
+					else
+						for key,value in pairs(mapStorage[src].tilesets[i].tileproperties) do
+							if not map.tilesets[detect].tileproperties[key] then
+								map.tilesets[detect].tileproperties[key] = value
+							else
+								for key2,value2 in pairs(mapStorage[src].tilesets[i].tileproperties[key]) do
+									if not map.tilesets[detect].tileproperties[key][key2] then
+										map.tilesets[detect].tileproperties[key][key2] = value2
+									end
+								end
+							end
+						end
+					end
+				end
+				
+				if i ~= detect then
+					local newFirstGID = map.tilesets[detect].firstgid
+					local oldFirstGID = mapStorage[src].tilesets[i].firstgid
+					
+					local tempTileWidth = map.tilesets[detect].tilewidth + (map.tilesets[detect].spacing)
+					local tempTileHeight = map.tilesets[detect].tileheight + (map.tilesets[detect].spacing)
+					local numFrames = math.floor(map.tilesets[detect].imagewidth / tempTileWidth) * math.floor(map.tilesets[detect].imageheight / tempTileHeight)
+					
+					map.adjustGID[src][#map.adjustGID[src] + 1] = {oldFirstGID, oldFirstGID + numFrames - 1, newFirstGID - oldFirstGID}
+				end
+				
+			else
+				--add tileset to table
+				local tempTileWidth = map.tilesets[#map.tilesets].tilewidth + (map.tilesets[#map.tilesets].spacing)
+				local tempTileHeight = map.tilesets[#map.tilesets].tileheight + (map.tilesets[#map.tilesets].spacing)
+				local numFrames = math.floor(map.tilesets[#map.tilesets].imagewidth / tempTileWidth) * math.floor(map.tilesets[#map.tilesets].imageheight / tempTileHeight)
+				local newFirstGID = map.tilesets[#map.tilesets].firstgid + numFrames
+			
+				local tempTileWidth = mapStorage[src].tilesets[i].tilewidth + (mapStorage[src].tilesets[i].spacing)
+				local tempTileHeight = mapStorage[src].tilesets[i].tileheight + (mapStorage[src].tilesets[i].spacing)
+				local oldFirstGID = mapStorage[src].tilesets[i].firstgid
+				local oldNumFrames = math.floor(mapStorage[src].tilesets[i].imagewidth / tempTileWidth) * math.floor(mapStorage[src].tilesets[i].imageheight / tempTileHeight)
+				
+				map.adjustGID[src][#map.adjustGID[src] + 1] = {oldFirstGID, oldFirstGID + oldNumFrames - 1, newFirstGID - oldFirstGID}
+				
+				map.tilesets[#map.tilesets + 1] = mapStorage[src].tilesets[i]
+				loadTileSet(#map.tilesets)
+				map.tilesets[#map.tilesets].firstgid = newFirstGID
+				
+				--PROCESS TILE PROPERTIES
+				if map.tilesets[#map.tilesets].tileproperties then
+					local tileProps = map.tilesets[#map.tilesets].tileproperties
+					for key,value in pairs(tileProps) do
+						local tileProps2 = tileProps[key]
+						for key2,value2 in pairs(tileProps[key]) do					
+							if key2 == "animFrames" then
+								tileProps2["animFrames"] = json.decode(value2)
+								local tempFrames = json.decode(value2)
+								if tileProps2["animFrameSelect"] == "relative" then
+									local frames = {}
+									for f = 1, #tempFrames, 1 do
+										frames[f] = (tonumber(key) + 1) + tempFrames[f]
+									end
+									tileProps2["sequenceData"] = {
+										name="null",
+										frames=frames,
+										time = tonumber(tileProps2["animDelay"]),
+										loopCount = 0
+									}
+								elseif tileProps2["animFrameSelect"] == "absolute" then
+									tileProps2["sequenceData"] = {
+										name="null",
+										frames=tempFrames,
+										time = tonumber(tileProps2["animDelay"]),
+										loopCount = 0
+									}
+								end
+								tileProps2["animSync"] = tonumber(tileProps2["animSync"]) or 1
+								if not syncData[tileProps2["animSync"] ] then
+									syncData[tileProps2["animSync"] ] = {}
+									syncData[tileProps2["animSync"] ].time = (tileProps2["sequenceData"].time / #tileProps2["sequenceData"].frames) / frameTime
+									syncData[tileProps2["animSync"] ].currentFrame = 1
+									syncData[tileProps2["animSync"] ].counter = syncData[tileProps2["animSync"] ].time
+									syncData[tileProps2["animSync"] ].frames = tileProps2["sequenceData"].frames
+								end
+							end
+							if key2 == "shape" then
+								tileProps2["shape"] = json.decode(value2)
+							end
+							if key2 == "filter" then
+								tileProps2["filter"] = json.decode(value2)
+							end
+							if key2 == "opacity" then					
+								frameIndex = tonumber(key) + (map.tilesets[#map.tilesets].firstgid - 1) + 1
+						
+								if not map.lightingData[frameIndex] then
+									map.lightingData[frameIndex] = {}
+								end
+								map.lightingData[frameIndex].opacity = json.decode(value2)
+							end
+						end
+					end
+				end		
+				if not map.tilesets[#map.tilesets].properties then
+					map.tilesets[#map.tilesets].properties = {}
+				end			
+				if map.tilesets[#map.tilesets].properties.normalMapSet then
+					local tempTileWidth = map.tilesets[#map.tilesets].tilewidth + (map.tilesets[#map.tilesets].spacing)
+					local tempTileHeight = map.tilesets[#map.tilesets].tileheight + (map.tilesets[#map.tilesets].spacing)
+					local numFrames = math.floor(map.tilesets[#map.tilesets].imagewidth / tempTileWidth) * math.floor(map.tilesets[#map.tilesets].imageheight / tempTileHeight)
+					local options = {width = map.tilesets[#map.tilesets].tilewidth, 
+						height = map.tilesets[#map.tilesets].tileheight, 
+						numFrames = numFrames, 
+						border = map.tilesets[#map.tilesets].margin,
+						sheetContentWidth = map.tilesets[#map.tilesets].imagewidth, 
+						sheetContentHeight = map.tilesets[#map.tilesets].imageheight
+					}
+					local src = map.tilesets[#map.tilesets].properties.normalMapSet
+					normalSets[#map.tilesets] = graphics.newImageSheet(src, options)
+				end
+				
+			end
+						
+		end
+		
+		--Expand Map Bounds
+		local storageWidth = mapStorage[src].width
+		local storageHeight = mapStorage[src].height
+		local storageOffsetX = mapStorage[src].locOffsetX
+		local storageOffsetY = mapStorage[src].locOffsetY
+		local left, top, right, bottom = 0, 0, 0, 0
+		if locX < 1 - map.locOffsetX then
+			left = (1 - map.locOffsetX) - locX
+		end
+		if locY < 1 - map.locOffsetY then
+			top = (1 - map.locOffsetY) - locY
+		end
+		if locX + mapStorage[src].width > map.width - map.locOffsetX then
+			right = (locX + mapStorage[src].width - 1) - (map.width - map.locOffsetX)
+		end
+		if locY + mapStorage[src].height > map.height - map.locOffsetY then
+			bottom = (locY + mapStorage[src].height - 1) - (map.height - map.locOffsetY)
+		end
+		M.expandMapBounds({pushLeft = left, pushUp = top, pushRight = right, pushDown = bottom})
+		
+		for key,value in pairs(mapStorage[src].properties) do
+			if not map.properties[key] then
+				map.properties[key] = value
+			end
+		end
+		
+		--LAYERS
+		--[[
+		Loop through new maps layers and transfer the data over to the current (base) maps
+		layers, adjusting for different firstgid's of tilesets. Check for new properties
+		and add to current (base) layers. Check for new objects if layer is objectLayer and 
+		add to current (base) objectLayers.
+		]]--
+		local action = {}
+		local numMapLayers = #map.layers
+		
+		for i = #mapStorage[src].layers + layer - 1, 1, - 1 do
+			local newIndex = i
+			action[newIndex] = {}
+			if newIndex > #map.layers and mapStorage[src].layers[i + 1 - layer] then
+				action[newIndex][1] = "add"
+				--print(newIndex, "1")
+			elseif newIndex > #map.layers then
+				M.createLayer(newIndex)
+				--print(newIndex, "2")
+			else
+				--print(newIndex, "3")
+				local mapLevel = tonumber(map.layers[i].properties.level)
+				local srcLevel = tonumber(mapStorage[src].layers[i + 1 - layer].properties.level) or 1
+				if srcLevel > mapLevel then
+					local newLayers = 0
+					for j = i + 1 - layer, 1 + 1 - layer, -1 do
+						if mapStorage[src].layers[j] and mapStorage[src].layers[j].properties and mapStorage[src].layers[j].properties.level and
+						tonumber(mapStorage[src].layers[j].properties.level) > tonumber(map.layers[#map.layers].properties.level) then
+							newLayers = newLayers + 1
+						end
+					end
+					local newLayer = #map.layers + newLayers
+					--action[newIndex] = {"add", #map.layers + newLayers}
+					action[newIndex] = {"add", newLayer}
+					local diff = newLayer - newIndex
+					--print(diff)
+					for j = newIndex + 1, #mapStorage[src].layers + layer - 1, 1 do
+						--print(" "..j)
+						local temp1 = action[j][1]
+						local temp2 = action[j][2]
+						--print(j, temp1, temp2)
+						action[j][2] = j + diff
+					end
+					
+				else
+					action[newIndex][1] = "process"
+				end
+			end
+			--print(newIndex, action[newIndex][1], action[newIndex][2])
+		end
+		
+		--[[
+		for i = #mapStorage[src].layers + layer - 1, 1, - 1 do
+			local newIndex = i
+			print(newIndex, action[newIndex][1], action[newIndex][2])
+		end 
+		]]--
+				
+		for i = #mapStorage[src].layers, 1, -1 do
+			local newIndex = i + layer - 1
+			if action[newIndex][1] == "process" then
+				local newIndex = i + layer - 1
+				if not map.layers[newIndex] then
+					map.layers[newIndex] = {}
+				end
+				for key,value in pairs(mapStorage[src].layers[i]) do
+					if key == "properties" then
+						for key,value in pairs(mapStorage[src].layers[i].properties) do
+							if not map.layers[newIndex].properties then
+								map.layers[newIndex].properties = {}
+							end
+							if not map.layers[newIndex].properties[key] then
+								map.layers[newIndex].properties[key] = value
+							end
+						end
+					elseif key == "objects" then
+						local level = map.layers[newIndex].properties.level					
+						local objectLayer = newIndex
+						if not map.layers[newIndex].properties.objectLayer then
+							objectLayer = M.getObjectLayer(level)
+						end
+						
+						for j = 1, #mapStorage[src].layers[i].objects, 1 do
+							map.layers[objectLayer].objects[#map.layers[objectLayer].objects + 1] = {}
+							for key,value in pairs(mapStorage[src].layers[i].objects[j]) do
+								map.layers[objectLayer].objects[#map.layers[objectLayer].objects][key] = value
+								if key == "properties" then
+									map.layers[objectLayer].objects[#map.layers[objectLayer].objects].properties = {}
+									for key2,value2 in pairs(mapStorage[src].layers[i].objects[j].properties) do
+										map.layers[objectLayer].objects[#map.layers[objectLayer].objects].properties[key2] = value2
+									end
+								end
+							end
+							map.layers[objectLayer].objects[#map.layers[objectLayer].objects].x = map.layers[objectLayer].objects[#map.layers[objectLayer].objects].x + ((locX - 1) * map.tilewidth)
+							map.layers[objectLayer].objects[#map.layers[objectLayer].objects].y = map.layers[objectLayer].objects[#map.layers[objectLayer].objects].y + ((locY - 1) * map.tileheight)
+						end
+					elseif key == "world" and #value > 1 and not mapStorage[src].layers[i].objects then
+						local dataLayer = newIndex	
+						if map.layers[newIndex].objects or not (map.layers[newIndex].data or map.layers[newIndex].world) then
+							dataLayer = refLayer
+							for i = newIndex, 1, -1 do
+								if (map.layers[i].data or map.layers[i].world) and not map.layers[i].objects then
+									dataLayer = i
+									break
+								end
+							end
+						end
+						
+						for x = locX, locX + storageWidth - 1, 1 do
+							local lx = x - locX + 1 - (mapStorage[src].locOffsetX or 0)
+							for y = locY, locY + storageHeight - 1, 1 do
+								local ly = y - locY + 1 - (mapStorage[src].locOffsetY or 0)
+								
+								if map.layers[dataLayer].world[x][y] == 0 or overwrite then
+									--print(lx, ly, x, y, (mapStorage[src].locOffsetX or 0))
+									map.layers[dataLayer].world[x][y] = mapStorage[src].layers[i].world[lx][ly]
+								end
+
+								for k = 1, #map.adjustGID[src], 1 do
+									if map.layers[dataLayer].world[x][y] >= map.adjustGID[src][k][1] and map.layers[dataLayer].world[x][y] <= map.adjustGID[src][k][2] then
+										map.layers[dataLayer].world[x][y] = map.layers[dataLayer].world[x][y] + map.adjustGID[src][k][3]
+										break
+									end
+								end
+								
+								if enableFlipRotation then
+									map.layers[dataLayer].flipRotation[x][y] = mapStorage[src].layers[i].flipRotation[lx][ly]
+								end
+								
+								--find static lights
+								if M.enableLighting then
+									for key,value in pairs(mapStorage[src].lights) do
+										map.lights[lightIDs] = value
+										lightIDs = lightIDs + 1
+									end
+								end
+							end
+						end
+					end
+					--------------
+				end
+			elseif action[newIndex][1] == "add" then
+				local newIndex = newIndex
+				if action[newIndex][2] then
+					newIndex = action[newIndex][2]
+				end
+				
+				M.createLayer(newIndex)
+				for key,value in pairs(mapStorage[src].layers[i]) do
+					if type(value) ~= "table" then
+						map.layers[newIndex][key] = value
+					end
+				end
+				map.layers[newIndex].width = map.layers[refLayer].width
+				map.layers[newIndex].height = map.layers[refLayer].height
+				
+				if mapStorage[src].layers[i].properties then
+					for key,value in pairs(mapStorage[src].layers[i].properties) do
+						map.layers[newIndex].properties[key] = value
+					end
+				end
+				
+				if mapStorage[src].layers[i].objects then
+					map.layers[newIndex].objects = {}
+					for key,value in pairs(mapStorage[src].layers[i].objects) do
+						map.layers[newIndex].objects[key] = value
+					end
+					map.layers[newIndex].properties.objectLayer = true
+				end
+				
+				if not map.layers[newIndex].properties.objectLayer then
+					for x = locX, locX + storageWidth - 1, 1 do
+						local lx = x - locX + 1
+						for y = locY, locY + storageHeight - 1, 1 do
+							local ly = y - locY + 1
+							if map.layers[newIndex].world[x][y] == 0 then
+								map.layers[newIndex].world[x][y] = mapStorage[src].layers[i].world[lx][ly]
+							end
+							
+							for k = 1, #map.adjustGID[src], 1 do
+								if map.layers[newIndex].world[x][y] >= map.adjustGID[src][k][1] and map.layers[newIndex].world[x][y] <= map.adjustGID[src][k][2] then
+									map.layers[newIndex].world[x][y] = map.layers[newIndex].world[x][y] + map.adjustGID[src][k][3]
+									break
+								end
+							end
+						
+							if enableFlipRotation then
+								map.layers[newIndex].flipRotation[x][y] = mapStorage[src].layers[i].flipRotation[lx][ly]
+							end
+							
+							--find static lights
+							if M.enableLighting then
+								for key,value in pairs(mapStorage[src].lights) do
+									map.lights[lightIDs] = value
+									lightIDs = lightIDs + 1
+								end
+							end
+						end
+					end
+				end
+				-----
+			end
+		end	
+		
+		M.setMapProperties(map.properties)
+		--for i = 1, #map.layers, 1 do
+			M.setLayerProperties(layer, map.layers[layer].properties)
+		--end
+	end
+	
 	M.loadMap = function(src, dir, unload)
 		local startTime=system.getTimer()
 		for key,value in pairs(sprites) do
@@ -7455,15 +9339,6 @@ M2.createMTE = function()
 							end
 							masterGroup[i][j]:removeSelf()
 							masterGroup[i][j] = nil
-						end
-						masterGroup[i]:removeSelf()
-						masterGroup[i] = nil
-					end
-				else
-					for i = 1, map.height + map.width + #map.layers, 1 do
-						for j = 1, #map.layers, 1 do
-							masterGroup[i].layers[j]:removeSelf()
-							masterGroup[i].layers[j] = nil
 						end
 						masterGroup[i]:removeSelf()
 						masterGroup[i] = nil
@@ -7496,9 +9371,6 @@ M2.createMTE = function()
 		if unload and source then
 			mapStorage[source] = nil
 		end	
-		for key,value in pairs(sprites) do
-			--removeSprite(value)
-		end
 		tileSets = {}
 		map = {}		
 		spriteLayers = {}
@@ -7714,6 +9586,9 @@ M2.createMTE = function()
 							if label == "data" then
 								if props.encoding == "base64" then
 									triggerBase64 = true
+									if props.compression then
+										print("Error(loadMap): Layer data compression is not supported. MTE supports CSV, TMX, and Base64(uncompressed).")
+									end
 								elseif props.encoding == "csv" then
 									triggerCSV = true
 								elseif not props.encoding then
@@ -8049,6 +9924,15 @@ M2.createMTE = function()
 		if not map.isoRatio then
 			map.isoRatio = map.tilewidth / map.tileheight
 		end
+		if not map.locOffsetX then
+			map.locOffsetX = 0
+		end
+		if not map.locOffsetY then
+			map.locOffsetY = 0
+		end
+		if not map.adjustGID then
+			map.adjustGID = {}
+		end
 		map.width = map.width
 		map.height = map.height
 		print("World Size X: "..map.width)
@@ -8130,26 +10014,6 @@ M2.createMTE = function()
 						masterGroup[i][j]:insert(tiles)
 					end
 				end
-			else
-				for i = 1, #map.layers, 1 do
-					masterGroup[i].vars = {}
-					masterGroup[i].vars.sX = 0
-					masterGroup[i].vars.sY = 0
-					masterGroup[i].vars.alpha = 1
-				end
-				for i = 1, map.height + map.width + #map.layers, 1 do
-					masterGroup[i] = display.newGroup()
-					masterGroup[i].xReference = display.viewableContentWidth * 0.5
-					masterGroup[i].yReference = display.viewableContentHeight * 0.5
-					masterGroup[i].layers = {}
-					for j = 1, #map.layers, 1 do
-						masterGroup[i].layers[j] = display.newGroup()
-						masterGroup[i]:insert(masterGroup[i].layers[j])
-					end
-					masterGroup:insert(masterGroup[i])
-					masterGroup.xReference = display.viewableContentWidth * 0.5
-					masterGroup.yReference = display.viewableContentHeight * 0.5
-				end
 			end
 		else
 			for i = 1, #map.layers, 1 do
@@ -8163,11 +10027,14 @@ M2.createMTE = function()
 				if M.enableSpriteSorting then
 					if map.layers[i].properties.spriteLayer then
 						masterGroup[i].vars.depthBuffer = true
+						local depthBuffer = display.newGroup()
+						depthBuffer.depthBuffer = true
+						masterGroup[i]:insert(depthBuffer)
 						for j = 1, map.height * M.spriteSortResolution, 1 do
-							local depthBuffer = display.newGroup()
-							depthBuffer.layer = i
-							depthBuffer.isDepthBuffer = true
-							masterGroup[i]:insert(depthBuffer)
+							local temp = display.newGroup()
+							temp.layer = i
+							temp.isDepthBuffer = true
+							masterGroup[i][2]:insert(temp)
 						end
 					end
 				end
@@ -8185,8 +10052,11 @@ M2.createMTE = function()
 					local tileProps2 = tileProps[key]
 					for key2,value2 in pairs(tileProps[key]) do					
 						if key2 == "animFrames" then
-							tileProps2["animFrames"] = json.decode(value2)
-							local tempFrames = json.decode(value2)
+							tempFrames = value2
+							if type(value2) == "string" then
+								tileProps2["animFrames"] = json.decode(value2)
+								tempFrames = json.decode(value2)
+							end
 							if tileProps2["animFrameSelect"] == "relative" then
 								local frames = {}
 								for f = 1, #tempFrames, 1 do
@@ -8215,10 +10085,10 @@ M2.createMTE = function()
 								syncData[tileProps2["animSync"] ].frames = tileProps2["sequenceData"].frames
 							end
 						end
-						if key2 == "shape" then
+						if key2 == "shape" and type(value2) == "string" then
 							tileProps2["shape"] = json.decode(value2)
 						end
-						if key2 == "filter" then
+						if key2 == "filter" and type(value2) == "string" then
 							tileProps2["filter"] = json.decode(value2)
 						end
 						if key2 == "opacity" then					
@@ -8277,19 +10147,33 @@ M2.createMTE = function()
 					end
 				end
 			end
+			
+			if type(map.layers[i].properties.forceDefaultPhysics) == "string" then
+				if map.layers[i].properties.forceDefaultPhysics == "true" then
+					map.layers[i].properties.forceDefaultPhysics = true
+				else
+					map.layers[i].properties.forceDefaultPhysics = false
+				end
+			end
+			
+			map.layers[i].toggleParallax = false
+			
 			map.layers[i].properties.scaleX = tonumber(map.layers[i].properties.scaleX)
 			map.layers[i].properties.scaleY = tonumber(map.layers[i].properties.scaleY)
 			if map.layers[i].properties.parallax then
 				map.layers[i].parallaxX = map.layers[i].properties.parallax / map.layers[i].properties.scaleX
 				map.layers[i].parallaxY = map.layers[i].properties.parallax / map.layers[i].properties.scaleY
+				map.layers[i].toggleParallax = true
 			else
 				if map.layers[i].properties.parallaxX then
 					map.layers[i].parallaxX = map.layers[i].properties.parallaxX / map.layers[i].properties.scaleX
+					map.layers[i].toggleParallax = true
 				else
 					map.layers[i].parallaxX = 1
 				end
 				if map.layers[i].properties.parallaxY then
 					map.layers[i].parallaxY = map.layers[i].properties.parallaxY / map.layers[i].properties.scaleY
+					map.layers[i].toggleParallax = true
 				else
 					map.layers[i].parallaxY = 1
 				end
@@ -8337,15 +10221,21 @@ M2.createMTE = function()
 				if map.layers[i].height > map.height then
 					map.layers[i].height = map.height
 				end
+				map.layers[i].toggleParallax = true
 			end		
 			--FIT BY PARALLAX / FIT BY SCALE
 			if map.layers[i].properties.fitByParallax then
-				map.layers[i].parallaxX = map.layers[i].width / map.width
-				map.layers[i].parallaxY = map.layers[i].height / map.height
+				map.layers[i].parallaxX = (map.layers[i].width / map.width) * map.layers[i].properties.scaleX * (map.layers[i].width * map.layers[i].properties.scaleX / map.width)
+				--map.layers[i].parallaxX = ((map.layers[i].width * map.layers[i].properties.scaleX) / map.width)
+				map.layers[i].parallaxY = (map.layers[i].height / map.height) * map.layers[i].properties.scaleY * (map.layers[i].height * map.layers[i].properties.scaleY / map.height)
+				--map.layers[i].parallaxY = (map.layers[i].height / map.height) --* map.layers[i].properties.scaleY
+				--map.layers[i].parallaxY = ((map.layers[i].height * map.layers[i].properties.scaleY) / map.height)
+				map.layers[i].toggleParallax = true
 			else
 				if map.layers[i].properties.fitByScale then
 					map.layers[i].properties.scaleX = (map.width * map.layers[i].properties.parallaxX) / map.layers[i].width
 					map.layers[i].properties.scaleY = (map.height * map.layers[i].properties.parallaxY) / map.layers[i].height
+					map.layers[i].toggleParallax = true
 				end
 			end
 			if map.layers[i].parallaxX == 1 and map.layers[i].parallaxY == 1 and map.layers[i].properties.scaleX == 1 and map.layers[i].properties.scaleY == 1 then
@@ -8357,6 +10247,9 @@ M2.createMTE = function()
 					refLayer2 = tonumber(i)
 				end
 			end		
+			if map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 or map.layers[i].toggleParallax == true then
+				parallaxToggle[i] = true
+			end
 			if M.enableLighting then
 				if not map.layers[i].lighting then
 					map.layers[i].lighting = {}
@@ -8437,11 +10330,19 @@ M2.createMTE = function()
 			for x = 1, map.layers[i].width, 1 do
 				tileObjects[i][x] = {}
 			end
-			
+			if not map.modified then
+				if not map.layers[i].data and not map.layers[i].image then
+					map.layers[i].properties.objectLayer = true
+				end
+			end
 			if not storageToggle then
 				--LOAD WORLD ARRAYS
 				if not map.modified then
 					map.layers[i].world = {}
+					map.layers[i].largeTiles = {}
+					if map.layers[i].properties.objectLayer then
+						map.layers[i].extendedObjects = {}
+					end
 					--tileObjects[i] = {}
 					if enableFlipRotation then
 						map.layers[i].flipRotation = {}
@@ -8456,7 +10357,12 @@ M2.createMTE = function()
 					local mD = mL.data	
 					for x = 1, map.layers[i].width, 1 do
 						mL.world[x] = {}
-						--mL.tileObjects[x] = {}
+						if not mL.largeTiles[x] then
+							mL.largeTiles[x] = {}
+						end
+						if mL.properties.objectLayer then
+							mL.extendedObjects[x] = {}
+						end
 						if mL.lighting then
 							mL.lighting[x] = {}
 						end
@@ -8475,7 +10381,7 @@ M2.createMTE = function()
 						for y = 1, map.layers[i].height, 1 do
 							if M.enableLighting and i == 1 then
 								map.lightToggle2[x][y] = 0
-							end					
+							end
 							local ly = y
 							while ly > map.height do
 								ly = ly - map.height
@@ -8502,19 +10408,21 @@ M2.createMTE = function()
 									end
 								else
 									mL.world[x][y] = mD[(map.width * (ly - 1)) + lx]
-								end		
-								--find static lights
-								if M.enableLighting then
-									if mL.world[x][y] ~= 0 then
-										local frameIndex = mL.world[x][y]
-										local tileSetIndex = 1
-										for i = 1, #map.tilesets, 1 do
-											if frameIndex >= map.tilesets[i].firstgid then
-												tileSetIndex = i
-											else
-												break
-											end
+								end	
+								
+								if mL.world[x][y] ~= 0 then
+									local frameIndex = mL.world[x][y]
+									local tileSetIndex = 1
+									for i = 1, #map.tilesets, 1 do
+										if frameIndex >= map.tilesets[i].firstgid then
+											tileSetIndex = i
+										else
+											break
 										end
+									end
+									
+									--find static lights
+									if M.enableLighting then
 										tileStr = tostring((frameIndex - (map.tilesets[tileSetIndex].firstgid - 1)) - 1)
 										local mT = map.tilesets[tileSetIndex].tileproperties
 										if mT then
@@ -8581,8 +10489,43 @@ M2.createMTE = function()
 											end
 										end
 									end
+									
+									--find large tiles
+									local mT = map.tilesets[tileSetIndex]
+									if mT.tilewidth > map.tilewidth or mT.tileheight > map.tileheight  then
+										--print("found")
+										local width = math.ceil(mT.tilewidth / map.tilewidth)
+										local height = math.ceil(mT.tileheight / map.tileheight)
+										
+										for locX = x, x + width - 1, 1 do
+											for locY = y, y - height + 1, -1 do
+												local lx = locX
+												local ly = locY
+												if lx > map.width then
+													lx = lx - map.width
+												elseif lx < 1 then
+													lx = lx + map.width
+												end
+												if ly > map.height then
+													ly = ly - map.height
+												elseif ly < 1 then
+													ly = ly + map.height
+												end
+												
+												if not mL.largeTiles[lx] then
+													map.layers[i].largeTiles[lx] = {}
+												end
+												if not mL.largeTiles[lx][ly] then
+													map.layers[i].largeTiles[lx][ly] = {}
+												end
+												
+												mL.largeTiles[lx][ly][#mL.largeTiles[lx][ly] + 1] = {frameIndex, x, y}
+											end
+										end
+										
+									end
 								end
-							
+								
 							else
 								mL.world[x][y] = 0
 							end
@@ -8590,11 +10533,7 @@ M2.createMTE = function()
 					end
 				end
 			end
-			if not map.modified then
-				if not map.layers[i].data and not map.layers[i].image then
-					map.layers[i].properties.objectLayer = true
-				end
-			end
+			
 			--DELETE IMPORTED TILEMAP FROM MEMORY
 			if not map.modified then
 				map.layers[i].data = nil
@@ -8794,7 +10733,7 @@ M2.createMTE = function()
 				end
 			end
 		end
-
+		
 		detectSpriteLayers()
 		detectObjectLayers()
 		M.map = map
@@ -8813,8 +10752,12 @@ M2.createMTE = function()
 			if map.tilesets[i].properties then
 				for key,value in pairs(map.tilesets[i].properties) do
 					if key == "physicsSource" then
+						local scaleFactor = 1
+						if map.tilesets[i].properties["physicsSourceScale"] then
+							scaleFactor = tonumber(map.tilesets[i].properties["physicsSourceScale"])
+						end
 						local source = value:gsub(".lua", "")
-						map.tilesets[i].physicsData = require(source).physicsData(1)
+						map.tilesets[i].physicsData = require(source).physicsData(scaleFactor)
 					end
 				end
 			end
@@ -8892,18 +10835,18 @@ M2.createMTE = function()
 					local locY = object.light.area[i][2]
 					object.light.area[i] = nil
 					if worldWrapX then
-						if locX < 1 then
+						if locX < 1 - map.locOffsetX then
 							locX = locX + map.width
 						end
-						if locX > map.width then
+						if locX > map.width - map.locOffsetX then
 							locX = locX - map.width
 						end
 					end
 					if worldWrapY then
-						if locY < 1 then
+						if locY < 1 - map.locOffsetY then
 							locY = locY + map.height
 						end
-						if locY > map.height then
+						if locY > map.height - map.locOffsetY then
 							locY = locY - map.height
 						end
 					end
@@ -8972,6 +10915,110 @@ M2.createMTE = function()
 	M.spritesFrozen = false
 	M.cameraFrozen = false
 	M.tileAnimsFrozen = false
+	
+	local drawLargeTile = function(locX, locY, layer, owner)
+		--[[
+		if locX > map.width then
+			locX = locX - map.width
+		elseif locX < 1 then
+			locX = locX + map.width
+		end
+		if locY > map.height then
+			locY = locY - map.height
+		elseif locY < 1 then
+			locY = locY + map.height
+		end
+		]]--
+		if locX < 1 - map.locOffsetX then
+			locX = locX + map.layers[layer].width
+		end
+		if locX > map.layers[layer].width - map.locOffsetX then
+			locX = locX - map.layers[layer].width
+		end				
+		
+		if locY < 1 - map.locOffsetY then
+			locY = locY + map.layers[layer].height
+		end
+		if locY > map.layers[layer].height - map.locOffsetY then
+			locY = locY - map.layers[layer].height
+		end
+		if map.layers[layer].largeTiles[locX] and map.layers[layer].largeTiles[locX][locY] then
+			for i = 1, #map.layers[layer].largeTiles[locX][locY], 1 do
+				local frameIndex = map.layers[layer].largeTiles[locX][locY][i][1]
+				local lx = map.layers[layer].largeTiles[locX][locY][i][2]
+				local ly = map.layers[layer].largeTiles[locX][locY][i][3]
+				
+				if not tileObjects[layer][lx][ly] then
+					updateTile2({locX = lx, locY = ly, layer = layer})
+				end
+			end
+		end
+	end
+	
+	local cullLargeTile = function(locX, locY, layer, force)
+		--[[
+		if locX > map.width then
+			locX = locX - map.width
+		elseif locX < 1 then
+			locX = locX + map.width
+		end
+		if locY > map.height then
+			locY = locY - map.height
+		elseif locY < 1 then
+			locY = locY + map.height
+		end
+		]]--
+		
+		local tlocx, tlocy = locX, locY
+		if locX < 1 - map.locOffsetX then
+			locX = locX + map.layers[layer].width
+		end
+		if locX > map.layers[layer].width - map.locOffsetX then
+			locX = locX - map.layers[layer].width
+		end				
+		
+		if locY < 1 - map.locOffsetY then
+			locY = locY + map.layers[layer].height
+		end
+		if locY > map.layers[layer].height - map.locOffsetY then
+			locY = locY - map.layers[layer].height
+		end
+		
+		if map.layers[layer].largeTiles[locX] and map.layers[layer].largeTiles[locX][locY] then
+			for i = 1, #map.layers[layer].largeTiles[locX][locY], 1 do
+				local frameIndex = map.layers[layer].largeTiles[locX][locY][i][1]
+				local lx = map.layers[layer].largeTiles[locX][locY][i][2]
+				local ly = map.layers[layer].largeTiles[locX][locY][i][3]
+				
+				if tileObjects[layer][lx][ly] then
+					local frameIndex = map.layers[layer].world[lx][ly]
+					local tileSetIndex = 1
+					for i = 1, #map.tilesets, 1 do
+						if frameIndex >= map.tilesets[i].firstgid then
+							tileSetIndex = i
+						else
+							break
+						end
+					end
+					
+					local mT = map.tilesets[tileSetIndex]
+					if mT.tilewidth > map.tilewidth or mT.tileheight > map.tileheight  then
+						local width = math.ceil(mT.tilewidth / map.tilewidth)
+						local height = math.ceil(mT.tileheight / map.tileheight)
+						local left, top, right, bottom = lx, ly - height + 1, lx + width - 1, ly
+						if (left > masterGroup[layer].vars.camera[3] or right < masterGroup[layer].vars.camera[1]or
+						top > masterGroup[layer].vars.camera[4] or bottom < masterGroup[layer].vars.camera[2]) or force then
+							if force then
+								updateTile2({locX = lx, locY = ly, layer = layer, tile = -1, forceCullLargeTile = true})
+							else
+								updateTile2({locX = lx, locY = ly, layer = layer, tile = -1})
+							end
+						end
+					end
+				end
+			end
+		end
+	end
 	
 	local update2 = function()
 		if touchScroll[1] and touchScroll[6] then
@@ -9062,7 +11109,6 @@ M2.createMTE = function()
 					pointLightSource = object
 				end				
 				
-				
 				if object.lighting then
 					local mL = map.layers[i]
 					if object.objType ~= 3 then
@@ -9084,10 +11130,10 @@ M2.createMTE = function()
 				end				
 				
 				if object.offsetX then
-					object.anchorX = (((object.levelWidth or object.width) / 2) - object.offsetX) / (object.levelWidth or object.width)
+					--object.anchorX = (((object.levelWidth or object.width) / 2) - object.offsetX) / (object.levelWidth or object.width)
 				end
 				if object.offsetY then
-					object.anchorY = (((object.levelHeight or object.height) / 2) - object.offsetY) / (object.levelHeight or object.height)		
+					--object.anchorY = (((object.levelHeight or object.height) / 2) - object.offsetY) / (object.levelHeight or object.height)		
 				end		
 				
 				if map.orientation == 1 then
@@ -9145,18 +11191,18 @@ M2.createMTE = function()
 									local locY = object.light.area[i][2]
 									object.light.area[i] = nil
 									if worldWrapX then
-										if locX < 1 then
+										if locX < 1 - map.locOffsetX then
 											locX = locX + map.width
 										end
-										if locX > map.width then
+										if locX > map.width - map.locOffsetX then
 											locX = locX - map.width
 										end
 									end
 									if worldWrapY then
-										if locY < 1 then
+										if locY < 1 - map.locOffsetY then
 											locY = locY + map.height
 										end
-										if locY > map.height then
+										if locY > map.height - map.locOffsetY then
 											locY = locY - map.height
 										end
 									end
@@ -9219,10 +11265,10 @@ M2.createMTE = function()
 					object.x = isoPos[1]
 					object.y = isoPos[2]					
 					if layerWrapX[i] and (object.wrapX == nil or object.wrapX == true) then
-						while object.levelPosX < 1 do
+						while object.levelPosX < 1 - (map.locOffsetX * map.tilewidth) do
 							object.levelPosX = object.levelPosX + map.layers[i].width * map.tilewidth
 						end
-						while object.levelPosX > map.layers[i].width * map.tilewidth do
+						while object.levelPosX > map.layers[i].width * map.tilewidth - (map.locOffsetX * map.tilewidth) do
 							object.levelPosX = object.levelPosX - map.layers[i].width * map.tilewidth
 						end						
 						if cameraX - object.levelPosX < map.layers[i].width * map.tilewidth / -2 then
@@ -9236,10 +11282,10 @@ M2.createMTE = function()
 						end
 					end					
 					if layerWrapY[i] and (object.wrapY == nil or object.wrapY == true) then
-						while object.levelPosY < 1 do
+						while object.levelPosY < 1 - (map.locOffsetY * map.tileheight) do
 							object.levelPosY = object.levelPosY + map.layers[i].height * map.tileheight
 						end
-						while object.levelPosY > map.layers[i].height * map.tileheight do
+						while object.levelPosY > map.layers[i].height * map.tileheight - (map.locOffsetY * map.tileheight) do
 							object.levelPosY = object.levelPosY - map.layers[i].height * map.tileheight
 						end						
 						if cameraY - object.levelPosY < map.layers[i].height * map.tileheight / -2 then
@@ -9258,23 +11304,23 @@ M2.createMTE = function()
 						local constraints = object.constrainToMap
 						local pushX, pushY = 0, 0						
 						if constraints[1] then
-							if object.levelPosX < 0 then
-								pushX = 0 - object.levelPosX
+							if object.levelPosX < 1 - (map.locOffsetX * map.tilewidth) then
+								pushX = 1 - (map.locOffsetX * map.tilewidth) - object.levelPosX
 							end
 						end
 						if constraints[2] then
-							if object.levelPosY < 0 then
-								pushY = 0 - object.levelPosY
+							if object.levelPosY < 1 - (map.locOffsetY * map.tileheight) then
+								pushY = 1 - (map.locOffsetY * map.tileheight) - object.levelPosY
 							end
 						end
 						if constraints[3] then
-							if object.levelPosX > map.width * map.tilewidth then
-								pushX = map.width * map.tilewidth - object.levelPosX
+							if object.levelPosX > (map.width - map.locOffsetX) * map.tilewidth then
+								pushX = (map.width - map.locOffsetX) * map.tilewidth - object.levelPosX
 							end
 						end
 						if constraints[4] then
-							if object.levelPosY > map.height * map.tileheight then
-								pushY = map.height * map.tileheight - object.levelPosY
+							if object.levelPosY > (map.height - map.locOffsetY) * map.tileheight then
+								pushY = (map.height - map.locOffsetY) * map.tileheight - object.levelPosY
 							end
 						end						
 						object:translate(pushX, pushY)
@@ -9284,59 +11330,71 @@ M2.createMTE = function()
 					object.locY = math.ceil(object.levelPosY / map.tileheight)
 					
 					--Handle Offscreen Physics (ISO)
-					if object.bodyType and masterGroup[i].vars.camera then
-						if object.offscreenPhysics then
-							local topLeftX, topLeftY = M.screenToLoc(object.contentBounds.xMin, object.contentBounds.yMin)
-							local topRightX, topRightY = M.screenToLoc(object.contentBounds.xMax, object.contentBounds.yMin)
-							local bottomLeftX, bottomLeftY = M.screenToLoc(object.contentBounds.xMin, object.contentBounds.yMax)
-							local bottomRightX, bottomRightY = M.screenToLoc(object.contentBounds.xMax, object.contentBounds.yMax)							
-							local left = topLeftX - 1
-							local top = topRightY - 1
-							local right = bottomRightX + 1
-							local bottom = bottomLeftY + 1							
-							if not object.bounds or (object.bounds[1] ~= left or object.bounds[2] ~= top or object.bounds[3] ~= right or object.bounds[4] ~= bottom) then
-								if object.physicsRegion then
-									for p = 1, #object.physicsRegion, 1 do
-										local lx = object.physicsRegion[p][1]
-										local ly = object.physicsRegion[p][2]
-										if (lx < masterGroup[i].vars.camera[1] or lx > masterGroup[i].vars.camera[3]) or
-										(ly < masterGroup[i].vars.camera[2] or ly > masterGroup[i].vars.camera[4]) then
-											updateTile2({locX = object.physicsRegion[p][1], locY = object.physicsRegion[p][2], layer = object.physicsRegion[p][3], tile = -1,
-												owner = object
-											})
+					if M.managePhysicsStates and (object.managePhysicsStates == nil or object.managePhysicsStates == true) then
+						if object.bodyType and masterGroup[i].vars.camera then
+							if object.offscreenPhysics then
+								local topLeftX, topLeftY = M.screenToLoc(object.contentBounds.xMin, object.contentBounds.yMin)
+								local topRightX, topRightY = M.screenToLoc(object.contentBounds.xMax, object.contentBounds.yMin)
+								local bottomLeftX, bottomLeftY = M.screenToLoc(object.contentBounds.xMin, object.contentBounds.yMax)
+								local bottomRightX, bottomRightY = M.screenToLoc(object.contentBounds.xMax, object.contentBounds.yMax)							
+								local left = topLeftX - 1
+								local top = topRightY - 1
+								local right = bottomRightX + 1
+								local bottom = bottomLeftY + 1							
+								if not object.bounds or (object.bounds[1] ~= left or object.bounds[2] ~= top or object.bounds[3] ~= right or object.bounds[4] ~= bottom) then
+									if object.physicsRegion then
+										for p = 1, #object.physicsRegion, 1 do
+											local lx = object.physicsRegion[p][1]
+											local ly = object.physicsRegion[p][2]
+											if (lx < masterGroup[i].vars.camera[1] or lx > masterGroup[i].vars.camera[3]) or
+											(ly < masterGroup[i].vars.camera[2] or ly > masterGroup[i].vars.camera[4]) then
+												updateTile2({locX = object.physicsRegion[p][1], locY = object.physicsRegion[p][2], layer = object.physicsRegion[p][3], tile = -1,
+													owner = object
+												})
+											end
 										end
 									end
-								end
-								object.physicsRegion = nil
-								object.physicsRegion = {}
-								for lx = left, right, 1 do
-									for ly = top, bottom, 1 do
-										for j = 1, #map.layers, 1 do
-											if (lx < masterGroup[j].vars.camera[1] or lx > masterGroup[j].vars.camera[3]) or
-											(ly < masterGroup[j].vars.camera[2] or ly > masterGroup[j].vars.camera[4]) then
-												local owner = updateTile2({locX = lx, locY = ly, layer = j, onlyPhysics = false, owner = object})
-												if owner then
-													object.physicsRegion[#object.physicsRegion + 1] = {lx, ly, j}
+									object.physicsRegion = nil
+									object.physicsRegion = {}
+									for lx = left, right, 1 do
+										for ly = top, bottom, 1 do
+											for j = 1, #map.layers, 1 do
+												if (lx < masterGroup[j].vars.camera[1] or lx > masterGroup[j].vars.camera[3]) or
+												(ly < masterGroup[j].vars.camera[2] or ly > masterGroup[j].vars.camera[4]) then
+													local owner = updateTile2({locX = lx, locY = ly, layer = j, onlyPhysics = false, owner = object})
+													if owner then
+														object.physicsRegion[#object.physicsRegion + 1] = {lx, ly, j}
+													end
 												end
 											end
 										end
 									end
+									object.bounds = {left, top, right, bottom}
 								end
-								object.bounds = {left, top, right, bottom}
-							end
-						else
-							local locX = math.ceil(object.levelPosX / map.tilewidth)
-							local locY = math.ceil(object.levelPosY / map.tilewidth)
-							if (locX < masterGroup[i].vars.camera[1] or locX > masterGroup[i].vars.camera[3]) or
-							(locY < masterGroup[i].vars.camera[2] or locY > masterGroup[i].vars.camera[4]) then
-								object.isBodyActive = false
-							elseif (locX <= masterGroup[i].vars.camera[1] or locX >= masterGroup[i].vars.camera[3]) or
-							(locY <= masterGroup[i].vars.camera[2] or locY >= masterGroup[i].vars.camera[4]) then
-								object.isAwake = false
-								object.isBodyActive = true
 							else
-								object.isAwake = true
-								object.isBodyActive = true
+								local locX = math.ceil(object.levelPosX / map.tilewidth)
+								local locY = math.ceil(object.levelPosY / map.tilewidth)
+								if (locX < masterGroup[i].vars.camera[1] or locX > masterGroup[i].vars.camera[3]) or
+								(locY < masterGroup[i].vars.camera[2] or locY > masterGroup[i].vars.camera[4]) then
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = false
+									end
+								elseif (locX <= masterGroup[i].vars.camera[1] or locX >= masterGroup[i].vars.camera[3]) or
+								(locY <= masterGroup[i].vars.camera[2] or locY >= masterGroup[i].vars.camera[4]) then
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = false
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								else
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = true
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								end
 							end
 						end
 					end
@@ -9351,12 +11409,6 @@ M2.createMTE = function()
 							if temp ~= object.row then
 								masterGroup[i][temp]:insert(object)
 							end
-						else
-							local temp = (object.locX + (object.level - 1)) + (object.locY + (object.level - 1)) - 1
-							if temp > map.height + map.width + #map.layers then
-								temp = map.height + map.width + #map.layers
-							end
-							displayGroups[temp].layers[i]:insert(object)
 						end
 					end
 					
@@ -9485,8 +11537,8 @@ M2.createMTE = function()
 							object.light.levelPosY = object.levelPosY
 						end					
 						if M.lightingData.refreshCounter == 1 then
-							if object.levelPosX > 0 and object.levelPosX <= map.width * map.tilewidth then
-								if object.levelPosY > 0 and object.levelPosY <= map.height * map.tileheight then
+							if object.levelPosX > 0 - (map.locOffsetX * map.tilewidth) and object.levelPosX <= (map.width - map.locOffsetX) * map.tilewidth then
+								if object.levelPosY > 0 - (map.locOffsetY * map.tileheight) and object.levelPosY <= (map.height - map.locOffsetY) * map.tileheight then
 									if object.light.rays then
 										for k = 1, #object.light.rays, 1 do
 											M.processLightRay(object.light.layer, object.light, object.light.rays[k])
@@ -9506,18 +11558,18 @@ M2.createMTE = function()
 											local locXt = locX
 											local locYt = locY						
 											if worldWrapX then
-												if locX < 1 then
+												if locX < 1 - map.locOffsetX then
 													locX = locX + map.width
 												end
-												if locX > map.width then
+												if locX > map.width - map.locOffsetX then
 													locX = locX - map.width
 												end
 											end
 											if worldWrapY then
-												if locY < 1 then
+												if locY < 1 - map.locOffsetY then
 													locY = locY + map.height
 												end
-												if locY > map.height then
+												if locY > map.height - map.locOffsetY then
 													locY = locY - map.height
 												end
 											end						
@@ -9735,18 +11787,18 @@ M2.createMTE = function()
 									local locY = object.light.area[i][2]
 									object.light.area[i] = nil
 									if worldWrapX then
-										if locX < 1 then
+										if locX < 1 - map.locOffsetX then
 											locX = locX + map.width
 										end
-										if locX > map.width then
+										if locX > map.width - map.locOffsetX then
 											locX = locX - map.width
 										end
 									end
 									if worldWrapY then
-										if locY < 1 then
+										if locY < 1 - map.locOffsetY then
 											locY = locY + map.height
 										end
-										if locY > map.height then
+										if locY > map.height - map.locOffsetY then
 											locY = locY - map.height
 										end
 									end
@@ -9807,10 +11859,10 @@ M2.createMTE = function()
 					object.levelPosX = object.x
 					object.levelPosY = object.y				
 					if layerWrapX[i] and (object.wrapX == nil or object.wrapX == true) then
-						while object.levelPosX < 1 do
+						while object.levelPosX < 1 - (map.locOffsetY * map.tileheight) do
 							object.levelPosX = object.levelPosX + map.layers[i].width * map.tilewidth
 						end
-						while object.levelPosX > map.layers[i].width * map.tilewidth do
+						while object.levelPosX > map.layers[i].width * map.tilewidth - (map.locOffsetY * map.tileheight) do
 							object.levelPosX = object.levelPosX - map.layers[i].width * map.tilewidth
 						end				
 						if cameraX - object.x < map.layers[i].width * map.tilewidth / -2 then
@@ -9822,10 +11874,10 @@ M2.createMTE = function()
 						end
 					end
 					if layerWrapY[i] and (object.wrapY == nil or object.wrapY == true) then
-						while object.levelPosY < 1 do
+						while object.levelPosY < 1 - (map.locOffsetY * map.tileheight) do
 							object.levelPosY = object.levelPosY + map.layers[i].height * map.tileheight
 						end
-						while object.levelPosY > map.layers[i].height * map.tileheight do
+						while object.levelPosY > map.layers[i].height * map.tileheight - (map.locOffsetY * map.tileheight) do
 							object.levelPosY = object.levelPosY - map.layers[i].height * map.tileheight
 						end					
 						if cameraY - object.y < map.layers[i].height * map.tileheight / -2 then
@@ -9842,92 +11894,265 @@ M2.createMTE = function()
 						local constraints = object.constrainToMap
 						local pushX, pushY = 0, 0
 						if constraints[1] then
-							if object.levelPosX < 1 then
-								pushX = 1 - object.levelPosX
+							if object.levelPosX < 1 - (map.locOffsetX * map.tilewidth) then
+								pushX = 1 - (map.locOffsetX * map.tilewidth) - object.levelPosX
 							end
 						end
 						if constraints[2] then
-							if object.levelPosY < 1 then
-								pushY = 1 - object.levelPosY
+							if object.levelPosY < 1 - (map.locOffsetY * map.tileheight) then
+								pushY = 1 - (map.locOffsetY * map.tileheight) - object.levelPosY
 							end
 						end
 						if constraints[3] then
-							if object.levelPosX > map.width * map.tilewidth then
-								pushX = map.width * map.tilewidth - object.levelPosX
+							if object.levelPosX > (map.width - map.locOffsetX) * map.tilewidth then
+								pushX = (map.width - map.locOffsetX) * map.tilewidth - object.levelPosX
 							end
 						end
 						if constraints[4] then
-							if object.levelPosY > map.height * map.tileheight then
-								pushY = map.height * map.tileheight - object.levelPosY
+							if object.levelPosY > (map.height - map.locOffsetY) * map.tileheight then
+								pushY = (map.height - map.locOffsetY) * map.tileheight - object.levelPosY
 							end
 						end
 						object:translate(pushX, pushY)
 					end
-				
+					
 					object.locX = math.ceil(object.levelPosX / map.tilewidth)
 					object.locY = math.ceil(object.levelPosY / map.tileheight)
-				
+					
 					--Handle Offscreen Physics
-					if object.bodyType and masterGroup[i].vars.camera then
-						if object.offscreenPhysics then
+					--print(object.name, M.managePhysicsStates, object.managePhysicsStates, object.managePhysicsStates)
+					if M.managePhysicsStates and (object.managePhysicsStates == nil or object.managePhysicsStates == true) then
+						if object.bodyType and masterGroup[i].vars.camera then
 							local tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMin, object.contentBounds.yMin)
 							local leftTop = {masterGroup[i]:contentToLocal(tempX, tempY)}							
 							tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMax, object.contentBounds.yMax)
 							local rightBottom = {masterGroup[i]:contentToLocal(tempX, tempY)}							
-							left = math.ceil(leftTop[1] / map.tilewidth) - 1
-							top = math.ceil(leftTop[2] / map.tileheight) - 1
-							right = math.ceil(rightBottom[1] / map.tilewidth) + 1
-							bottom = math.ceil(rightBottom[2] / map.tileheight) + 1
-							if not object.bounds or (object.bounds[1] ~= left or object.bounds[2] ~= top or object.bounds[3] ~= right or object.bounds[4] ~= bottom) then
-								if object.physicsRegion then
-									for p = 1, #object.physicsRegion, 1 do
+							local left = math.ceil(leftTop[1] / map.tilewidth) - 1
+							local top = math.ceil(leftTop[2] / map.tileheight) - 1
+							local right = math.ceil(rightBottom[1] / map.tilewidth) + 1
+							local bottom = math.ceil(rightBottom[2] / map.tileheight) + 1
+							
+							if object.bodyType ~= "static" then
+								if object.bounds and object.physicsRegion and #object.physicsRegion > 0 then
+									for p = #object.physicsRegion, 1, -1 do
 										local lx = object.physicsRegion[p][1]
 										local ly = object.physicsRegion[p][2]
-										if (lx < masterGroup[i].vars.camera[1] or lx > masterGroup[i].vars.camera[3]) or
-										(ly < masterGroup[i].vars.camera[2] or ly > masterGroup[i].vars.camera[4]) then
-											updateTile2({locX = object.physicsRegion[p][1], locY = object.physicsRegion[p][2], layer = object.physicsRegion[p][3], tile = -1,
-												owner = object
-											})
+										local layer = object.physicsRegion[p][3]
+										if lx < object.bounds[1] or lx > object.bounds[3] or ly < object.bounds[2] or ly > object.bounds[4] then
+											if lx < masterGroup[i].vars.camera[1] or lx > masterGroup[i].vars.camera[3] or
+											ly < masterGroup[i].vars.camera[2] or ly > masterGroup[i].vars.camera[4] then
+												updateTile2({locX = lx, locY = ly, layer = layer, tile = -1, owner = object})
+												--cullLargeTile(lx, ly, layer, nil, object)
+												table.remove(object.physicsRegion, p)
+											end
 										end
+									
 									end
+								else
+									object.physicsRegion = {}
 								end
-								object.physicsRegion = nil						
-								object.physicsRegion = {}
+								if not object.bounds or object.bounds[1] ~= left or object.bounds[2] ~= top or object.bounds[3] ~= right or object.bounds[4] ~= bottom then
+									object.bounds = {left, top, right, bottom}
+								end
 								for lx = left, right, 1 do
 									for ly = top, bottom, 1 do
 										for j = 1, #map.layers, 1 do
-											if (lx < masterGroup[j].vars.camera[1] or lx > masterGroup[j].vars.camera[3]) or
-											(ly < masterGroup[j].vars.camera[2] or ly > masterGroup[j].vars.camera[4]) then
-												local owner = updateTile2({locX = lx, locY = ly, layer = j, onlyPhysics = false, owner = object})
+											if lx < 1 - map.locOffsetX then
+												lx = lx + map.layers[j].width
+											end
+											if lx > map.layers[j].width - map.locOffsetX then
+												lx = lx - map.layers[j].width
+											end				
+		
+											if ly < 1 - map.locOffsetY then
+												ly = ly + map.layers[j].height
+											end
+											if ly > map.layers[j].height - map.locOffsetY then
+												ly = ly - map.layers[j].height
+											end
+											if not tileObjects[j][lx][ly] and map.layers[j].world[lx][ly] ~= 0 then
+												local owner = updateTile2({locX = lx, locY = ly, layer = j, onlyPhysics = true, owner = object})
 												if owner then
 													object.physicsRegion[#object.physicsRegion + 1] = {lx, ly, j}
 												end
+												--[[
+												owner = nil
+												owner = drawLargeTile(locX, locY, layer, object)
+												if owner then
+													object.physicsRegion[#object.physicsRegion + 1] = {owner[1], owner[2], j}
+												end
+												]]--
 											end
+											
+											local tX, tY = lx, ly
+											if tX < 1 - map.locOffsetX then
+												tX = tX + map.layers[j].width
+											end
+											if tX > map.layers[j].width - map.locOffsetX then
+												tX = tX - map.layers[j].width
+											end				
+	
+											if tY < 1 - map.locOffsetY then
+												tY = tY + map.layers[j].height
+											end
+											if tY > map.layers[j].height - map.locOffsetY then
+												tY = tY - map.layers[j].height
+											end
+											
+											if map.layers[j].largeTiles[tX] and map.layers[j].largeTiles[tX][tY] then
+												for i = 1, #map.layers[j].largeTiles[tX][tY], 1 do
+													local frameIndex = map.layers[j].largeTiles[tX][tY][i][1]
+													local ltx = map.layers[j].largeTiles[tX][tY][i][2]
+													local lty = map.layers[j].largeTiles[tX][tY][i][3]
+													
+													if not tileObjects[j][ltx][lty] then
+														local owner = updateTile2({locX = ltx, locY = lty, layer = j, onlyPhysics = true, owner = object})
+														if owner then
+															object.physicsRegion[#object.physicsRegion + 1] = {ltx, lty, j}
+														end
+													end
+												end
+											end
+											
+											drawCulledObjects(lx, ly, j)
 										end
 									end
 								end
-								object.bounds = {left, top, right, bottom}
 							end
-						else
-							local locX = math.ceil(object.x / map.tilewidth)
-							local locY = math.ceil(object.y / map.tilewidth)
-							if (locX < masterGroup[i].vars.camera[1] - 1 or locX > masterGroup[i].vars.camera[3] + 1) or
-							(locY < masterGroup[i].vars.camera[2] - 1 or locY > masterGroup[i].vars.camera[4] + 1) then
-								object.isBodyActive = false
-							elseif (locX < masterGroup[i].vars.camera[1] or locX > masterGroup[i].vars.camera[3]) or
-							(locY < masterGroup[i].vars.camera[2] or locY > masterGroup[i].vars.camera[4]) then
-								object.isAwake = false
-								object.isBodyActive = true
-							else
-								object.isAwake = true
-								object.isBodyActive = true
+							if not object.offscreenPhysics then
+								local tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMin, object.contentBounds.yMin)
+								local leftTop = {masterGroup[i]:contentToLocal(tempX, tempY)}							
+								tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMax, object.contentBounds.yMax)
+								local rightBottom = {masterGroup[i]:contentToLocal(tempX, tempY)}							
+								local left = math.ceil(leftTop[1] / map.tilewidth)
+								local top = math.ceil(leftTop[2] / map.tileheight)
+								local right = math.ceil(rightBottom[1] / map.tilewidth)
+								local bottom = math.ceil(rightBottom[2] / map.tileheight)
+								
+								if left < masterGroup[i].vars.camera[1] and right > masterGroup[i].vars.camera[1] then
+									left = masterGroup[i].vars.camera[1]
+								end
+								if top < masterGroup[i].vars.camera[2] and bottom > masterGroup[i].vars.camera[2] then
+									top = masterGroup[i].vars.camera[2]
+								end
+								if right < masterGroup[i].vars.camera[3] and left > masterGroup[i].vars.camera[3] then
+									right = masterGroup[i].vars.camera[3]
+								end
+								if bottom > masterGroup[i].vars.camera[4] and top < masterGroup[i].vars.camera[4] then
+									bottom = masterGroup[i].vars.camera[4]
+								end
+								
+								if (left >= masterGroup[i].vars.camera[1] and left <= masterGroup[i].vars.camera[3] and
+								top >= masterGroup[i].vars.camera[2] and top <= masterGroup[i].vars.camera[4]) or
+								
+								(right >= masterGroup[i].vars.camera[1] and right <= masterGroup[i].vars.camera[3] and
+								top >= masterGroup[i].vars.camera[2] and top <= masterGroup[i].vars.camera[4]) or
+								
+								(left >= masterGroup[i].vars.camera[1] and left <= masterGroup[i].vars.camera[3] and
+								bottom >= masterGroup[i].vars.camera[2] and bottom <= masterGroup[i].vars.camera[4]) or
+								
+								(right >= masterGroup[i].vars.camera[1] and right <= masterGroup[i].vars.camera[3] and
+								bottom >= masterGroup[i].vars.camera[2] and bottom <= masterGroup[i].vars.camera[4])then
+									--onscreen
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = true
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								elseif (left >= masterGroup[i].vars.camera[1] - 1 and left <= masterGroup[i].vars.camera[3] + 1 and
+								top >= masterGroup[i].vars.camera[2] - 1 and top <= masterGroup[i].vars.camera[4] + 1) or
+								
+								(right >= masterGroup[i].vars.camera[1] - 1 and right <= masterGroup[i].vars.camera[3] + 1 and
+								top >= masterGroup[i].vars.camera[2] - 1 and top <= masterGroup[i].vars.camera[4] + 1) or
+								
+								(left >= masterGroup[i].vars.camera[1] - 1 and left <= masterGroup[i].vars.camera[3] + 1 and
+								bottom >= masterGroup[i].vars.camera[2] - 1 and bottom <= masterGroup[i].vars.camera[4] + 1) or
+								
+								(right >= masterGroup[i].vars.camera[1] - 1 and right <= masterGroup[i].vars.camera[3] + 1 and
+								bottom >= masterGroup[i].vars.camera[2] - 1 and bottom <= masterGroup[i].vars.camera[4] + 1)then
+									--edge
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = false
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								else
+									--offscreen
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = false
+									end
+								end
+								
+								--[[
+								
+								local isState = nil
+								if (left >= masterGroup[i].vars.camera[1] or right <= masterGroup[i].vars.camera[3] or
+								top >= masterGroup[i].vars.camera[2] or bottom <= masterGroup[i].vars.camera[4]) then
+									--onscreen
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = true
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								elseif (left >= masterGroup[i].vars.camera[1] - 1 or right <= masterGroup[i].vars.camera[3] + 1 or
+								top >= masterGroup[i].vars.camera[2] - 1 or bottom <= masterGroup[i].vars.camera[4] + 1) then
+									--edge
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = false
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								else
+									--offscreen
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = false
+									end
+								end
+								]]--
+								
+								--[[
+								local locX = math.ceil(object.x / map.tilewidth)
+								local locY = math.ceil(object.y / map.tilewidth)
+								
+								if (locX < masterGroup[i].vars.camera[1] - 1 or locX > masterGroup[i].vars.camera[3] + 1) or
+								(locY < masterGroup[i].vars.camera[2] - 1 or locY > masterGroup[i].vars.camera[4] + 1) then
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = false
+									end
+								elseif (locX < masterGroup[i].vars.camera[1] or locX > masterGroup[i].vars.camera[3]) or
+								(locY < masterGroup[i].vars.camera[2] or locY > masterGroup[i].vars.camera[4]) then
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = false
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								else
+									if not object.properties or not object.properties.isAwake then
+										object.isAwake = true
+									end
+									if not object.properties or not object.properties.isBodyActive then
+										object.isBodyActive = true
+									end
+								end
+								]]--
 							end
 						end
 					end
-				
+					
 					--Sort Sprites
 					if object.sortSprite and M.enableSpriteSorting then
-						local tempY = ceil(math.round(object.levelPosY) / (map.tileheight / M.spriteSortResolution))					
+						local adjustedPosition = object.levelPosY + ((map.locOffsetY - 1) * map.tileheight)
+					
+						--local tempY = ceil(math.round(object.levelPosY) / (map.tileheight / M.spriteSortResolution))	
+						--print(object.levelPosY, adjustedPosition)		
+						
+						local tempY = ceil(math.round(adjustedPosition) / (map.tileheight / M.spriteSortResolution))	
+						--print(tempY)
 						if tempY > (map.layers[i].height * M.spriteSortResolution) then
 							while tempY > map.layers[i].height do
 								tempY = tempY - (map.layers[i].height * M.spriteSortResolution)
@@ -9936,9 +12161,16 @@ M2.createMTE = function()
 							while tempY < 1 do
 								tempY = tempY + (map.layers[i].height * M.spriteSortResolution)
 							end
-						end					
+						end		
 						if not object.depthBuffer or object.depthBuffer ~= tempY then
-							masterGroup[i][tempY]:insert(object)
+							if object.name == "player" then
+								--print("this", object.name, tempY, masterGroup[i][tempY])
+							end
+							for key,value in pairs( masterGroup[i][2][tempY]) do
+								--print(key,value)
+							end
+							--print(masterGroup[i], masterGroup[i][2], tempY, masterGroup[i][2].numChildren)
+							masterGroup[i][2][tempY]:insert(object)
 						end
 						object.depthBuffer = tempY						
 						if object.sortSpriteOnce then
@@ -10190,8 +12422,8 @@ M2.createMTE = function()
 							object.light.levelPosY = object.levelPosY
 						end					
 						if M.lightingData.refreshCounter == 1 then
-							if object.levelPosX > 0 and object.levelPosX <= map.width * map.tilewidth then
-								if object.levelPosY > 0 and object.levelPosY <= map.height * map.tileheight then
+							if object.levelPosX > 0 - (map.locOffsetX * map.tilewidth) and object.levelPosX <= (map.width - map.locOffsetX) * map.tilewidth then
+								if object.levelPosY > 0 - (map.locOffsetY * map.tileheight) and object.levelPosY <= (map.height - map.locOffsetY) * map.tileheight then
 									if object.light.rays then
 										for k = 1, #object.light.rays, 1 do
 											M.processLightRay(object.light.layer, object.light, object.light.rays[k])
@@ -10211,18 +12443,18 @@ M2.createMTE = function()
 											local locXt = locX
 											local locYt = locY						
 											if worldWrapX then
-												if locX < 1 then
+												if locX < 1 - map.locOffsetX then
 													locX = locX + map.width
 												end
-												if locX > map.width then
+												if locX > map.width - map.locOffsetX then
 													locX = locX - map.width
 												end
 											end
 											if worldWrapY then
-												if locY < 1 then
+												if locY < 1 - map.locOffsetY then
 													locY = locY + map.height
 												end
-												if locY > map.height then
+												if locY > map.height - map.locOffsetY then
 													locY = locY - map.height
 												end
 											end						
@@ -10384,6 +12616,225 @@ M2.createMTE = function()
 							end
 						end
 					end
+					
+					--Cull Object
+					if masterGroup[i].vars.camera and object.objectKey and ((object.properties and object.properties.cull == "true") or (map.layers[i].properties and map.layers[i].properties.cullObjects == "true")) then
+						local tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMin, object.contentBounds.yMin)
+						local leftTop = {masterGroup[i]:contentToLocal(tempX, tempY)}							
+						tempX, tempY = masterGroup.parent:localToContent(object.contentBounds.xMax, object.contentBounds.yMax)
+						local rightBottom = {masterGroup[i]:contentToLocal(tempX, tempY)}							
+						local tleft = math.ceil(leftTop[1] / map.tilewidth)
+						local ttop = math.ceil(leftTop[2] / map.tileheight)
+						local tright = math.ceil(rightBottom[1] / map.tilewidth)
+						local tbottom = math.ceil(rightBottom[2] / map.tileheight)
+						
+						local left, top, right, bottom = tleft, ttop, tright, tbottom
+						if tleft < masterGroup[i].vars.camera[1] and tright > masterGroup[i].vars.camera[1] then
+							left = masterGroup[i].vars.camera[1]
+						end
+						if ttop < masterGroup[i].vars.camera[2] and tbottom > masterGroup[i].vars.camera[2] then
+							top = masterGroup[i].vars.camera[2]
+						end
+						if tright < masterGroup[i].vars.camera[3] and tleft > masterGroup[i].vars.camera[3] then
+							right = masterGroup[i].vars.camera[3]
+						end
+						if tbottom > masterGroup[i].vars.camera[4] and ttop < masterGroup[i].vars.camera[4] then
+							bottom = masterGroup[i].vars.camera[4]
+						end
+						
+						if (left >= masterGroup[i].vars.camera[1] and left <= masterGroup[i].vars.camera[3] and
+						top >= masterGroup[i].vars.camera[2] and top <= masterGroup[i].vars.camera[4]) or
+						
+						(right >= masterGroup[i].vars.camera[1] and right <= masterGroup[i].vars.camera[3] and
+						top >= masterGroup[i].vars.camera[2] and top <= masterGroup[i].vars.camera[4]) or
+						
+						(left >= masterGroup[i].vars.camera[1] and left <= masterGroup[i].vars.camera[3] and
+						bottom >= masterGroup[i].vars.camera[2] and bottom <= masterGroup[i].vars.camera[4]) or
+						
+						(right >= masterGroup[i].vars.camera[1] and right <= masterGroup[i].vars.camera[3] and
+						bottom >= masterGroup[i].vars.camera[2] and bottom <= masterGroup[i].vars.camera[4])then
+							--onscreen
+						
+						elseif (left >= masterGroup[i].vars.camera[1] - 1 and left <= masterGroup[i].vars.camera[3] + 1 and
+						top >= masterGroup[i].vars.camera[2] - 1 and top <= masterGroup[i].vars.camera[4] + 1) or
+						
+						(right >= masterGroup[i].vars.camera[1] - 1 and right <= masterGroup[i].vars.camera[3] + 1 and
+						top >= masterGroup[i].vars.camera[2] - 1 and top <= masterGroup[i].vars.camera[4] + 1) or
+						
+						(left >= masterGroup[i].vars.camera[1] - 1 and left <= masterGroup[i].vars.camera[3] + 1 and
+						bottom >= masterGroup[i].vars.camera[2] - 1 and bottom <= masterGroup[i].vars.camera[4] + 1) or
+						
+						(right >= masterGroup[i].vars.camera[1] - 1 and right <= masterGroup[i].vars.camera[3] + 1 and
+						bottom >= masterGroup[i].vars.camera[2] - 1 and bottom <= masterGroup[i].vars.camera[4] + 1)then
+							--edge
+						else
+							--offscreen
+							--sprites[spriteName].objectKey = ky
+							--sprites[spriteName].objectLayer = layer
+							
+							local tiledObject = map.layers[i].objects[object.objectKey]
+							tiledObject.cullData = {object.x, object.y, object.width, object.height, object.rotation}
+							tiledObject.properties.wasDrawn = false
+							
+							if object.physicsRegion and #object.physicsRegion > 0 then
+								for p = #object.physicsRegion, 1, -1 do
+									local lx = object.physicsRegion[p][1]
+									local ly = object.physicsRegion[p][2]
+									local layer = object.physicsRegion[p][3]
+									updateTile2({locX = lx, locY = ly, layer = layer, tile = -1, owner = object})
+									table.remove(object.physicsRegion, p)							
+								end
+							end
+							
+							local mL = map.layers[object.objectLayer]
+							
+							tiledObject.cullData[6] = {}
+							for x = tleft, tright, 1 do
+								for y = ttop, tbottom, 1 do
+									if not mL.extendedObjects[x][y] then
+										mL.extendedObjects[x][y] = {}
+									end
+									
+									mL.extendedObjects[x][y][#mL.extendedObjects[x][y] + 1] = {object.objectLayer, object.objectKey}
+									tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {x, y, #mL.extendedObjects[x][y]}
+									
+								end
+							end
+							
+							if bob and tright - tleft < masterGroup[i].vars.camera[3] - masterGroup[i].vars.camera[1] then
+								if tbottom - ttop < masterGroup[i].vars.camera[4] - masterGroup[i].vars.camera[2] then
+									--four corners
+									--print(tleft, ttop, tright, tbottom)
+									if not mL.extendedObjects[tleft][ttop] then
+										mL.extendedObjects[tleft][ttop] = {}
+									end
+									if not mL.extendedObjects[tright][ttop] then
+										mL.extendedObjects[tright][ttop] = {}
+									end
+									if not mL.extendedObjects[tleft][tbottom] then
+										mL.extendedObjects[tleft][tbottom] = {}
+									end
+									if not mL.extendedObjects[tright][tbottom] then
+										mL.extendedObjects[tright][tbottom] = {}
+									end
+									
+									mL.extendedObjects[tleft][ttop][#mL.extendedObjects[tleft][ttop] + 1] = {object.objectLayer, object.objectKey}
+									mL.extendedObjects[tright][ttop][#mL.extendedObjects[tright][ttop] + 1] = {object.objectLayer, object.objectKey}
+									mL.extendedObjects[tleft][tbottom][#mL.extendedObjects[tleft][tbottom] + 1] = {object.objectLayer, object.objectKey}
+									mL.extendedObjects[tright][tbottom][#mL.extendedObjects[tright][tbottom] + 1] = {object.objectLayer, object.objectKey}
+									
+									tiledObject.cullData[6] = {
+										{tleft, ttop, #mL.extendedObjects[tleft][ttop]},
+										{tright, ttop, #mL.extendedObjects[tright][ttop]},
+										{tleft, tbottom, #mL.extendedObjects[tleft][tbottom]},
+										{tright, tbottom, #mL.extendedObjects[tright][tbottom]}
+									}
+									
+									if q then
+									tiledObject.cullData[6] = {
+										mL.extendedObjects[tleft][ttop][#mL.extendedObjects[tleft][ttop]],
+										mL.extendedObjects[tright][ttop][#mL.extendedObjects[tright][ttop]],
+										mL.extendedObjects[tleft][tbottom][#mL.extendedObjects[tleft][tbottom]],
+										mL.extendedObjects[tright][tbottom][#mL.extendedObjects[tright][tbottom]]
+									}
+									end
+								else
+									--double columns
+									tiledObject.cullData[6] = {}
+									
+									for y = ttop, tbottom, 1 do
+										if not mL.extendedObjects[tleft][y] then
+											mL.extendedObjects[tleft][y] = {}
+										end
+										if not mL.extendedObjects[tright][y] then
+											mL.extendedObjects[tright][y] = {}
+										end
+										
+										mL.extendedObjects[tleft][y][#mL.extendedObjects[tleft][y] + 1] = {object.objectLayer, object.objectKey}
+										mL.extendedObjects[tright][y][#mL.extendedObjects[tright][y] + 1] = {object.objectLayer, object.objectKey}
+										
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {tleft, y, #mL.extendedObjects[tleft][y]}
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {tright, y, #mL.extendedObjects[tright][y]}
+										
+										if q then
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[tleft][y][#mL.extendedObjects[tleft][y]]
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[tright][y][#mL.extendedObjects[tright][y]]
+										end
+									end
+								end
+							elseif bob then
+								if tbottom - ttop < masterGroup[i].vars.camera[4] - masterGroup[i].vars.camera[2] then
+									--double rows
+									tiledObject.cullData[6] = {}
+									
+									for x = tleft, tright, 1 do
+										if not mL.extendedObjects[x][ttop] then
+											mL.extendedObjects[x][ttop] = {}
+										end
+										if not mL.extendedObjects[x][tbottom] then
+											mL.extendedObjects[x][tbottom] = {}
+										end
+										
+										mL.extendedObjects[x][ttop][#mL.extendedObjects[x][ttop] + 1] = {object.objectLayer, object.objectKey}
+										mL.extendedObjects[x][tbottom][#mL.extendedObjects[x][tbottom] + 1] = {object.objectLayer, object.objectKey}
+										
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {x, ttop, #mL.extendedObjects[x][ttop]}
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {x, tbottom, #mL.extendedObjects[x][tbottom]}
+										
+										if q then
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[x][ttop][#mL.extendedObjects[x][ttop]]
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[x][tbottom][#mL.extendedObjects[x][tbottom]]
+										end
+									end
+								else
+									--rows and columns
+									tiledObject.cullData[6] = {}
+									
+									for x = tleft, tright, 1 do
+										if not mL.extendedObjects[x][ttop] then
+											mL.extendedObjects[x][ttop] = {}
+										end
+										if not mL.extendedObjects[x][tbottom] then
+											mL.extendedObjects[x][tbottom] = {}
+										end
+										
+										mL.extendedObjects[x][ttop][#mL.extendedObjects[x][ttop] + 1] = {object.objectLayer, object.objectKey}
+										mL.extendedObjects[x][tbottom][#mL.extendedObjects[x][tbottom] + 1] = {object.objectLayer, object.objectKey}
+										
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {x, ttop, #mL.extendedObjects[x][ttop]}
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {x, tbottom, #mL.extendedObjects[x][tbottom]}
+										
+										if q then
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[x][ttop][#mL.extendedObjects[x][ttop]]
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[x][tbottom][#mL.extendedObjects[x][tbottom]]
+										end
+									end
+									
+									for y = ttop - 1, tbottom + 1, 1 do
+										if not mL.extendedObjects[tleft][y] then
+											mL.extendedObjects[tleft][y] = {}
+										end
+										if not mL.extendedObjects[tright][y] then
+											mL.extendedObjects[tright][y] = {}
+										end
+										
+										mL.extendedObjects[tleft][y][#mL.extendedObjects[tleft][y] + 1] = {object.objectLayer, object.objectKey}
+										mL.extendedObjects[tright][y][#mL.extendedObjects[tright][y] + 1] = {object.objectLayer, object.objectKey}
+										
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {tleft, y, #mL.extendedObjects[tleft][y]}
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = {tright, y, #mL.extendedObjects[tright][y]}
+										
+										if q then
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[tleft][y][#mL.extendedObjects[tleft][y]]
+										tiledObject.cullData[6][#tiledObject.cullData[6] + 1] = mL.extendedObjects[tright][y][#mL.extendedObjects[tright][y]]
+										end
+									end
+								end
+							end
+
+							M.removeSprite(object)
+						end
+					end
 					------
 				end
 			end
@@ -10405,11 +12856,13 @@ M2.createMTE = function()
 				else
 					for j = masterGroup[i].numChildren, 1, -1 do
 						if not masterGroup[i][j].tiles then
-							if masterGroup[i][j].isDepthBuffer then
+							if masterGroup[i][j].depthBuffer then
 								for k = 1, masterGroup[i][j].numChildren, 1 do
-									local object = masterGroup[i][j][k]
-									if object then
-										processObject(object, i)
+									for m = 1, masterGroup[i][j][k].numChildren, 1 do
+										local object = masterGroup[i][j][k][m]
+										if object then
+											processObject(object, i)
+										end
 									end
 								end
 							else
@@ -10533,7 +12986,7 @@ M2.createMTE = function()
 				if cameraFocus and not holdSprite then
 					for i = 1, #map.layers, 1 do
 						local tempX, tempY, cameraX, cameraY, velX, velY
-						if map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
+						if map.layers[i].toggleParallax == true or map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
 							tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
 							cameraX, cameraY = masterGroup[refLayer]:contentToLocal(tempX, tempY)
 							velX = finalVelX[refLayer] or 0
@@ -10759,16 +13212,16 @@ M2.createMTE = function()
 						masterGroup[i]:translate(tempVelX2 * -1 * map.layers[i].properties.scaleX, tempVelY2 * -1 * map.layers[i].properties.scaleY)
 					else
 						if not leftConstraint then
-							leftConstraint = 0 + (cameraX - left)
+							leftConstraint = (0 - (map.locOffsetX * map.tilewidth)) + (cameraX - left)
 						end
 						if not topConstraint then
-							topConstraint = 0 + (cameraY - top)
+							topConstraint = (0 - (map.locOffsetY * map.tileheight)) + (cameraY - top)
 						end
 						if not rightConstraint then
-							rightConstraint = (map.width * map.tilewidth) - (right - cameraX)
+							rightConstraint = ((map.width - map.locOffsetX) * map.tilewidth) - (right - cameraX)
 						end
 						if not bottomConstraint then
-							bottomConstraint = (map.height * map.tileheight) - (bottom - cameraY)	
+							bottomConstraint = ((map.height - map.locOffsetY) * map.tileheight) - (bottom - cameraY)	
 						end			
 						if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
 							local temp = (leftConstraint + rightConstraint) / 2
@@ -10791,26 +13244,26 @@ M2.createMTE = function()
 						local yA = masterGroup[i].vars.alignment[2] or "center"						
 						local levelPosX, levelPosY
 						if xA == "center" then
-							local adjustment1 = ((map.width * map.tilewidth * 0.5) * map.layers[i].properties.scaleX) - (map.width * map.tilewidth * 0.5)
-							local adjustment2 = (cameraX - (map.width * map.tilewidth * 0.5)) - ((cameraX - (map.width * map.tilewidth * 0.5)) * map.layers[i].parallaxX)
+							local adjustment1 = (((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[i].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+							local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[i].parallaxX)
 							levelPosX = ((cameraX + adjustment1) - adjustment2)
 						elseif xA == "left" then
 							local adjustment = (cameraX - leftConstraint) - ((cameraX - leftConstraint) * map.layers[i].parallaxX)
 							levelPosX = (cameraX - adjustment)
 						elseif xA == "right" then
-							local adjustment1 = ((map.width * map.tilewidth) * map.layers[i].properties.scaleX) - (map.width * map.tilewidth)
+							local adjustment1 = (((map.width - map.locOffsetX) * map.tilewidth) * map.layers[i].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
 							local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[i].parallaxX)
 							levelPosX = ((cameraX + adjustment1) - adjustment2)
 						end						
 						if yA == "center" then
-							local adjustment1 = ((map.height * map.tileheight * 0.5) * map.layers[i].properties.scaleY) - (map.height * map.tileheight * 0.5)
-							local adjustment2 = (cameraY - (map.height * map.tileheight * 0.5)) - ((cameraY - (map.height * map.tileheight * 0.5)) * map.layers[i].parallaxY)
+							local adjustment1 = (((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[i].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+							local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[i].parallaxY)
 							levelPosY = ((cameraY + adjustment1) - adjustment2)
 						elseif yA == "top" then
 							local adjustment = (cameraY - topConstraint) - ((cameraY - topConstraint) * map.layers[i].parallaxY)
 							levelPosY = (cameraY - adjustment)
 						elseif yA == "bottom" then
-							local adjustment1 = ((map.height * map.tileheight) * map.layers[i].properties.scaleY) - (map.height * map.tileheight)
+							local adjustment1 = (((map.height - map.locOffsetY) * map.tileheight) * map.layers[i].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
 							local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[i].parallaxY)
 							levelPosY = ((cameraY + adjustment1) - adjustment2)
 						end							
@@ -10921,7 +13374,7 @@ M2.createMTE = function()
 				if cameraFocus and not holdSprite then
 					for i = 1, #map.layers, 1 do
 						local tempX, tempY, cameraX, cameraY, velX, velY
-						if map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
+						if map.layers[i].toggleParallax == true or map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
 							tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
 							cameraX, cameraY = masterGroup[refLayer]:contentToLocal(tempX, tempY)
 							velX = finalVelX[refLayer] or 0
@@ -11006,6 +13459,243 @@ M2.createMTE = function()
 					bottomRight = {masterGroup[refLayer]:contentToLocal(topRightT[1], topRightT[2])}
 					bottomLeft = {masterGroup[refLayer]:contentToLocal(bottomRightT[1], bottomRightT[2])}
 				end
+				--[[
+				print(" ")
+				for i = 1, #map.layers, 1 do
+					if masterGroup[i].vars.alignment then
+						print("a", i)
+						local left, top, right, bottom
+						if topLeft[1] < bottomLeft[1] then
+							left = topLeft[1]
+						else
+							left = bottomLeft[1]
+						end
+						if topLeft[2] < topRight[2] then
+							top = topLeft[2]
+						else
+							top = topRight[2]
+						end
+						if topRight[1] > bottomRight[1] then
+							right = topRight[1]
+						else
+							right = bottomRight[1]
+						end
+						if bottomRight[2] > bottomLeft[2] then
+							bottom = bottomRight[2]
+						else
+							bottom = bottomLeft[2]
+						end	
+						local leftConstraint, topConstraint, rightConstraint, bottomConstraint
+						if constrainLeft[i] then
+							leftConstraint = constrainLeft[i] + (cameraX - left)
+						end
+						if constrainTop[i] then
+							topConstraint = constrainTop[i] + (cameraY - top)
+						end
+						if constrainRight[i] then
+							rightConstraint = constrainRight[i] - (right - cameraX)
+						end
+						if constrainBottom[i] then
+							bottomConstraint = constrainBottom[i] - (bottom - cameraY)
+						end						
+						if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
+							local temp = (leftConstraint + rightConstraint) / 2
+							leftConstraint = temp
+							rightConstraint = temp
+						end
+						if (topConstraint and bottomConstraint) and (topConstraint > bottomConstraint) then
+							local temp = (topConstraint + bottomConstraint) / 2
+							topConstraint = temp
+							bottomConstraint = temp
+						end		
+						if not leftConstraint then
+							leftConstraint = (0 - (map.locOffsetX * map.tilewidth)) + (cameraX - left)
+						end
+						if not topConstraint then
+							topConstraint = (0 - (map.locOffsetY * map.tileheight)) + (cameraY - top)
+						end
+						if not rightConstraint then
+							rightConstraint = (map.width * map.tilewidth) - (right - cameraX)
+						end
+						if not bottomConstraint then
+							bottomConstraint = (map.height * map.tileheight) - (bottom - cameraY)	
+						end			
+						if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
+							local temp = (leftConstraint + rightConstraint) / 2
+							leftConstraint = temp
+							rightConstraint = temp
+						end
+						if (topConstraint and bottomConstraint) and (topConstraint > bottomConstraint) then
+							local temp = (topConstraint + bottomConstraint) / 2
+							topConstraint = temp
+							bottomConstraint = temp
+						end	
+						local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
+						local cameraX, cameraY = masterGroup[refLayer]:contentToLocal(tempX, tempY)
+						local cameraLocX = math.ceil(cameraX / map.tilewidth)
+						local cameraLocY = math.ceil(cameraY / map.tileheight)
+						local xA = masterGroup[i].vars.alignment[1]
+						local yA = masterGroup[i].vars.alignment[2]						
+						if xA == "center" then
+							local adjustment1 = (((map.layers[i].width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[i].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+							local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[i].parallaxX)
+							masterGroup[i].x = ((cameraX + adjustment1) - adjustment2) * -1
+						elseif xA == "left" then
+							local adjustment = (cameraX - leftConstraint) - ((cameraX - leftConstraint) * map.layers[i].parallaxX)
+							masterGroup[i].x = (cameraX - adjustment) * -1
+						elseif xA == "right" then
+							local adjustment1 = (((map.layers[i].width - map.locOffsetX) * map.tilewidth) * map.layers[i].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
+							local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[i].parallaxX)
+							masterGroup[i].x = ((cameraX + adjustment1) - adjustment2) * -1
+						end						
+						if yA == "center" then
+							local adjustment1 = (((map.layers[i].height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[i].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+							local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[i].parallaxY)
+							masterGroup[i].y = ((cameraY + adjustment1) - adjustment2) * -1
+						elseif yA == "top" then
+							local adjustment = (cameraY - topConstraint) - ((cameraY - topConstraint) * map.layers[i].parallaxY)
+							masterGroup[i].y = (cameraY - adjustment) * -1
+						elseif yA == "bottom" then
+							local adjustment1 = (((map.layers[i].height - map.locOffsetY) * map.tileheight) * map.layers[i].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
+							local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[i].parallaxY)
+							masterGroup[i].y = ((cameraY + adjustment1) - adjustment2) * -1
+						end		
+					else
+						print("b", i)
+						if not refMove and ((not followingSprite or masterGroup[i].vars.constrainLayer) and not masterGroup[i].vars.alignment) then
+							local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
+							cameraX, cameraY = masterGroup[i]:contentToLocal(tempX, tempY)
+							cameraLocX = math.ceil(cameraX / map.tilewidth)
+							cameraLocY = math.ceil(cameraY / map.tileheight)
+						
+							--calculate constraints
+							angle = masterGroup.rotation + masterGroup[i].rotation
+							while angle >= 360 do
+								angle = angle - 360
+							end
+							while angle < 0 do
+								angle = angle + 360
+							end						
+							if angle >= 0 and angle < 90 then
+								topLeft = {masterGroup[i]:contentToLocal(topLeftT[1], topLeftT[2])}
+								topRight = {masterGroup[i]:contentToLocal(topRightT[1], topRightT[2])}
+								bottomRight = {masterGroup[i]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+								bottomLeft = {masterGroup[i]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+							elseif angle >= 90 and angle < 180 then
+								topLeft = {masterGroup[i]:contentToLocal(topRightT[1], topRightT[2])}
+								topRight = {masterGroup[i]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+								bottomRight = {masterGroup[i]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+								bottomLeft = {masterGroup[i]:contentToLocal(topLeftT[1], topLeftT[2])}
+							elseif angle >= 180 and angle < 270 then
+								topLeft = {masterGroup[i]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+								topRight = {masterGroup[i]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+								bottomRight = {masterGroup[i]:contentToLocal(topLeftT[1], topLeftT[2])}
+								bottomLeft = {masterGroup[i]:contentToLocal(topRightT[1], topRightT[2])}
+							elseif angle >= 270 and angle < 360 then
+								topLeft = {masterGroup[i]:contentToLocal(bottomLeftT[1], bottomLeftT[2])}
+								topRight = {masterGroup[i]:contentToLocal(topLeftT[1], topLeftT[2])}
+								bottomRight = {masterGroup[i]:contentToLocal(topRightT[1], topRightT[2])}
+								bottomLeft = {masterGroup[i]:contentToLocal(bottomRightT[1], bottomRightT[2])}
+							end
+						end
+						local left, top, right, bottom
+						if topLeft[1] < bottomLeft[1] then
+							left = topLeft[1]
+						else
+							left = bottomLeft[1]
+						end
+						if topLeft[2] < topRight[2] then
+							top = topLeft[2]
+						else
+							top = topRight[2]
+						end
+						if topRight[1] > bottomRight[1] then
+							right = topRight[1]
+						else
+							right = bottomRight[1]
+						end
+						if bottomRight[2] > bottomLeft[2] then
+							bottom = bottomRight[2]
+						else
+							bottom = bottomLeft[2]
+						end	
+						local leftConstraint, topConstraint, rightConstraint, bottomConstraint
+						if constrainLeft[i] then
+							leftConstraint = constrainLeft[i] + (cameraX - left)
+						end
+						if constrainTop[i] then
+							topConstraint = constrainTop[i] + (cameraY - top)
+						end
+						if constrainRight[i] then
+							rightConstraint = constrainRight[i] - (right - cameraX)
+						end
+						if constrainBottom[i] then
+							bottomConstraint = constrainBottom[i] - (bottom - cameraY)
+						end						
+						if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
+							local temp = (leftConstraint + rightConstraint) / 2
+							leftConstraint = temp
+							rightConstraint = temp
+						end
+						if (topConstraint and bottomConstraint) and (topConstraint > bottomConstraint) then
+							local temp = (topConstraint + bottomConstraint) / 2
+							topConstraint = temp
+							bottomConstraint = temp
+						end	
+						local velX = finalVelX[i] or 0
+						local velY = finalVelY[i] or 0
+						local tempVelX = velX
+						local tempVelY = velY					
+						if not override[i] then
+							if leftConstraint then
+								if cameraX + velX / map.layers[i].parallaxX < leftConstraint then
+									tempVelX = (leftConstraint - cameraX) * map.layers[i].parallaxX
+								end
+								if cameraFocus and cameraFocus.levelPosX + cameraFocus.cameraOffsetX[i] < leftConstraint then
+									cameraFocus.cameraOffsetX[i] = leftConstraint - cameraFocus.levelPosX
+									if cameraFocus.levelPosX + cameraFocus.cameraOffsetX[i] > cameraFocus.levelPosX and (cameraVelX[i] or 0) <= 0 then
+										cameraFocus.cameraOffsetX[i] = 0
+									end
+								end
+							end
+							if rightConstraint then
+								if cameraX + velX / map.layers[i].parallaxX > rightConstraint then
+									tempVelX = (rightConstraint - cameraX) * map.layers[i].parallaxX
+								end
+								if cameraFocus and cameraFocus.levelPosX + cameraFocus.cameraOffsetX[i] > rightConstraint then
+									cameraFocus.cameraOffsetX[i] = rightConstraint - cameraFocus.levelPosX
+									if cameraFocus.levelPosX + cameraFocus.cameraOffsetX[i] < cameraFocus.levelPosX and (cameraVelX[i] or 0) >= 0 then
+										cameraFocus.cameraOffsetX[i] = 0
+									end
+								end
+							end
+							if topConstraint then
+								if cameraY + velY / map.layers[i].parallaxY < topConstraint then
+									tempVelY = (topConstraint - cameraY) * map.layers[i].parallaxY
+								end
+								if cameraFocus and cameraFocus.levelPosY + cameraFocus.cameraOffsetY[i] < topConstraint then
+									cameraFocus.cameraOffsetY[i] = topConstraint - cameraFocus.levelPosY
+									if cameraFocus.levelPosY + cameraFocus.cameraOffsetY[i] > cameraFocus.levelPosY and (cameraVelY[i] or 0) <= 0 then
+										cameraFocus.cameraOffsetY[i] = 0
+									end
+								end
+							end
+							if bottomConstraint then
+								if cameraY + velY / map.layers[i].parallaxY > bottomConstraint then
+									tempVelY = (bottomConstraint - cameraY) * map.layers[i].parallaxY
+								end
+								if cameraFocus and cameraFocus.levelPosY + cameraFocus.cameraOffsetY[i] > bottomConstraint then
+									cameraFocus.cameraOffsetY[i] = bottomConstraint - cameraFocus.levelPosY
+									if cameraFocus.levelPosY + cameraFocus.cameraOffsetY[i] < cameraFocus.levelPosY and (cameraVelY[i] or 0) >= 0 then
+										cameraFocus.cameraOffsetY[i] = 0
+									end
+								end
+							end
+						end				
+						masterGroup[i]:translate(tempVelX * -1 * map.layers[i].properties.scaleX, tempVelY * -1 * map.layers[i].properties.scaleY)
+					end
+				end
+				]]--				
 				for i = 1, #map.layers, 1 do
 					if not refMove and ((not followingSprite or masterGroup[i].vars.constrainLayer) and not masterGroup[i].vars.alignment) then
 						local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
@@ -11087,6 +13777,7 @@ M2.createMTE = function()
 						topConstraint = temp
 						bottomConstraint = temp
 					end					
+					--print(masterGroup[i].vars.alignment)
 					if not masterGroup[i].vars.alignment then
 						local velX = finalVelX[i] or 0
 						local velY = finalVelY[i] or 0
@@ -11141,10 +13832,10 @@ M2.createMTE = function()
 						masterGroup[i]:translate(tempVelX * -1 * map.layers[i].properties.scaleX, tempVelY * -1 * map.layers[i].properties.scaleY)
 					else
 						if not leftConstraint then
-							leftConstraint = 0 + (cameraX - left)
+							leftConstraint = (0 - (map.locOffsetX * map.tilewidth)) + (cameraX - left)
 						end
 						if not topConstraint then
-							topConstraint = 0 + (cameraY - top)
+							topConstraint = (0 - (map.locOffsetY * map.tileheight)) + (cameraY - top)
 						end
 						if not rightConstraint then
 							rightConstraint = (map.width * map.tilewidth) - (right - cameraX)
@@ -11167,33 +13858,45 @@ M2.createMTE = function()
 						local cameraLocX = math.ceil(cameraX / map.tilewidth)
 						local cameraLocY = math.ceil(cameraY / map.tileheight)
 						local xA = masterGroup[i].vars.alignment[1]
-						local yA = masterGroup[i].vars.alignment[2]						
+						local yA = masterGroup[i].vars.alignment[2]	
+						--print(i, xA, yA)					
 						if xA == "center" then
-							local adjustment1 = ((map.width * map.tilewidth * 0.5) * map.layers[i].properties.scaleX) - (map.width * map.tilewidth * 0.5)
-							local adjustment2 = (cameraX - (map.width * map.tilewidth * 0.5)) - ((cameraX - (map.width * map.tilewidth * 0.5)) * map.layers[i].parallaxX)
+							--local adjustment1 = (((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[i].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+							--local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[i].parallaxX)
+							--print(map.layers[i].parallaxX)
+							--local adjustment1 = (((map.layers[i].width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[i].properties.scaleX) - ((map.layers[i].width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+							local adjustment1 = (((map.layers[i].width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[i].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+							local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[i].parallaxX)
 							masterGroup[i].x = ((cameraX + adjustment1) - adjustment2) * -1
 						elseif xA == "left" then
 							local adjustment = (cameraX - leftConstraint) - ((cameraX - leftConstraint) * map.layers[i].parallaxX)
 							masterGroup[i].x = (cameraX - adjustment) * -1
 						elseif xA == "right" then
-							local adjustment1 = ((map.width * map.tilewidth) * map.layers[i].properties.scaleX) - (map.width * map.tilewidth)
+							--local adjustment1 = (((map.width - map.locOffsetX) * map.tilewidth) * map.layers[i].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
+							--local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[i].parallaxX)
+							local adjustment1 = (((map.layers[i].width - map.locOffsetX) * map.tilewidth) * map.layers[i].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
 							local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[i].parallaxX)
 							masterGroup[i].x = ((cameraX + adjustment1) - adjustment2) * -1
 						end						
 						if yA == "center" then
-							local adjustment1 = ((map.height * map.tileheight * 0.5) * map.layers[i].properties.scaleY) - (map.height * map.tileheight * 0.5)
-							local adjustment2 = (cameraY - (map.height * map.tileheight * 0.5)) - ((cameraY - (map.height * map.tileheight * 0.5)) * map.layers[i].parallaxY)
+							--local adjustment1 = (((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[i].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+							--local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[i].parallaxY)
+							local adjustment1 = (((map.layers[i].height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[i].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+							local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[i].parallaxY)
 							masterGroup[i].y = ((cameraY + adjustment1) - adjustment2) * -1
 						elseif yA == "top" then
 							local adjustment = (cameraY - topConstraint) - ((cameraY - topConstraint) * map.layers[i].parallaxY)
 							masterGroup[i].y = (cameraY - adjustment) * -1
 						elseif yA == "bottom" then
-							local adjustment1 = ((map.height * map.tileheight) * map.layers[i].properties.scaleY) - (map.height * map.tileheight)
+							--local adjustment1 = (((map.height - map.locOffsetY) * map.tileheight) * map.layers[i].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
+							--local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[i].parallaxY)
+							local adjustment1 = (((map.layers[i].height - map.locOffsetY) * map.tileheight) * map.layers[i].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
 							local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[i].parallaxY)
 							masterGroup[i].y = ((cameraY + adjustment1) - adjustment2) * -1
 						end
 					end
 				end
+				
 				if refMove and not deltaX[refLayer][1] then
 					refMove = false
 				end				
@@ -11311,6 +14014,7 @@ M2.createMTE = function()
 					for locX = left, right, 1 do
 						for locY = top, bottom, 1 do										
 							updateTile2({locX = locX, locY = locY, layer = layer})
+							--drawLargeTile(locX, locY, layer)
 						end
 					end
 				else		
@@ -11447,7 +14151,10 @@ M2.createMTE = function()
 				local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
 				local cameraX, cameraY = masterGroup[layer]:contentToLocal(tempX, tempY)
 				local cameraLocX = math.ceil(cameraX / map.tilewidth)
-				local cameraLocY = math.ceil(cameraY / map.tileheight)				
+				local cameraLocY = math.ceil(cameraY / map.tileheight)	
+				
+				--print(layer, cameraX)
+							
 				M.cameraX, M.cameraY = cameraX, cameraY
 				M.cameraLocX = cameraLocX
 				M.cameraLocY = cameraLocY
@@ -11509,14 +14216,24 @@ M2.createMTE = function()
 					else
 						bottom = math.ceil(bottomLeft[2] / map.tileheight)
 					end				
-					masterGroup[layer].vars.camera = {left, top, right, bottom}					
+					masterGroup[layer].vars.camera = {left, top, right, bottom}	
+					--print("do1", layer)
+					--print(" ", left, prevLeft)
+					--print(" ", top, prevTop)
+					--print(" ", right, prevRight)
+					--print(" ", bottom, prevBottom)				
 					for locX = left, right, 1 do
 						for locY = top, bottom, 1 do										
 							updateTile2({locX = locX, locY = locY, layer = layer})
+							drawCulledObjects(locX, locY, layer)
+							drawLargeTile(locX, locY, layer)
 						end
 					end
+					--print("=============")
 					------------
+					--print("do", layer)
 				else	
+					--print("do2", layer)
 					--Cull and Render
 					local prevLeft = masterGroup[layer].vars.camera[1]
 					local prevTop = masterGroup[layer].vars.camera[2]
@@ -11576,19 +14293,30 @@ M2.createMTE = function()
 						bottom = math.ceil(bottomRight[2] / map.tileheight)
 					else
 						bottom = math.ceil(bottomLeft[2] / map.tileheight)
-					end							
+					end						
 					masterGroup[layer].vars.camera = {left, top, right, bottom}
 					if left > prevRight or right < prevLeft or top > prevBottom or bottom < prevTop then
+						--print("do3", layer, "==================================")
+						--print(" ", left, prevLeft)
+						--print(" ", top, prevTop)
+						--print(" ", right, prevRight)
+						--print(" ", bottom, prevBottom)
 						for locX = prevLeft, prevRight, 1 do
-							for locY = prevTop, prevBottom, 1 do										
+							for locY = prevTop, prevBottom, 1 do
+								--print("do4")										
 								updateTile2({locX = locX, locY = locY, layer = layer, tile = -1})
+								cullLargeTile(locX, locY, layer)
 							end
 						end
 						for locX = left, right, 1 do
-							for locY = top, bottom, 1 do										
+							for locY = top, bottom, 1 do		
+								--print("do5")								
 								updateTile2({locX = locX, locY = locY, layer = layer})
+								drawCulledObjects(locX, locY, layer)
+								drawLargeTile(locX, locY, layer)
 							end
 						end
+						--print("=============")
 					else
 						--left
 						if left > prevLeft then		--cull
@@ -11596,6 +14324,7 @@ M2.createMTE = function()
 							for locX = prevLeft, tLeft - 1, 1 do
 								for locY = prevTop, prevBottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer, tile = -1})
+									cullLargeTile(locX, locY, layer)
 								end
 							end
 						elseif left < prevLeft then	--render
@@ -11603,6 +14332,8 @@ M2.createMTE = function()
 							for locX = left, tLeft - 1, 1 do
 								for locY = top, bottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer})
+									drawCulledObjects(locX, locY, layer)
+									drawLargeTile(locX, locY, layer)
 								end
 							end
 						end				
@@ -11612,6 +14343,7 @@ M2.createMTE = function()
 							for locX = prevLeft, prevRight, 1 do
 								for locY = prevTop, tTop - 1, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer, tile = -1})
+									cullLargeTile(locX, locY, layer)
 								end
 							end
 						elseif top < prevTop then	--render
@@ -11619,6 +14351,8 @@ M2.createMTE = function()
 							for locX = left, right, 1 do
 								for locY = top, tTop - 1, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer})
+									drawCulledObjects(locX, locY, layer)
+									drawLargeTile(locX, locY, layer)
 								end
 							end
 						end				
@@ -11628,6 +14362,8 @@ M2.createMTE = function()
 							for locX = tRight + 1, right, 1 do
 								for locY = top, bottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer})
+									drawCulledObjects(locX, locY, layer)
+									drawLargeTile(locX, locY, layer)
 								end
 							end
 						elseif right < prevRight then	--cull
@@ -11635,6 +14371,7 @@ M2.createMTE = function()
 							for locX = tRight + 1, prevRight, 1 do
 								for locY = prevTop, prevBottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer, tile = -1})
+									cullLargeTile(locX, locY, layer)
 								end
 							end
 						end				
@@ -11644,6 +14381,8 @@ M2.createMTE = function()
 							for locX = left, right, 1 do
 								for locY = tBottom + 1, bottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer})
+									drawCulledObjects(locX, locY, layer)
+									drawLargeTile(locX, locY, layer)
 								end
 							end
 						elseif bottom < prevBottom then	--cull
@@ -11651,6 +14390,7 @@ M2.createMTE = function()
 							for locX = prevLeft, prevRight, 1 do
 								for locY = tBottom + 1, prevBottom, 1 do
 									updateTile2({locX = locX, locY = locY, layer = layer, tile = -1})
+									cullLargeTile(locX, locY, layer)
 								end
 							end
 						end
@@ -11692,17 +14432,17 @@ M2.createMTE = function()
 						for y = masterGroup[i].vars.camera[2], masterGroup[i].vars.camera[4], 1 do
 							local locX = x
 							local locY = y
-							if locX < 1 then
+							if locX < 1 - map.locOffsetX then
 								locX = locX + map.layers[i].width
 							end
-							if locX > map.layers[i].width then
+							if locX > map.layers[i].width - map.locOffsetX then
 								locX = locX - map.layers[i].width
 							end										
-							if locY < 1 then
-								locY = locY + map.layers[i].width
+							if locY < 1 - map.locOffsetY then
+								locY = locY + map.layers[i].height
 							end
-							if locY > map.layers[i].width then
-								locY = locY - map.layers[i].width
+							if locY > map.layers[i].height - map.locOffsetY then
+								locY = locY - map.layers[i].height
 							end
 							if tileObjects[i][locX] and tileObjects[i][locX][locY] then
 								local rect = tileObjects[i][locX][locY]								
@@ -11835,16 +14575,16 @@ M2.createMTE = function()
 						local locX, locY = x, y
 						for i = 1, #map.layers, 1 do
 							if layerWrapX[i] then
-								if locX < 1 then
+								if locX < 1 - map.locOffsetX then
 									locX = locX + map.layers[i].width
-								elseif locX > map.layers[i].width then
+								elseif locX > map.layers[i].width - map.locOffsetX then
 									locX = locX - map.layers[i].width
 								end
 							end
 							if layerWrapY[i] then
-								if locY < 1 then
+								if locY < 1 - map.locOffsetY then
 									locY = locY + map.layers[i].height
-								elseif locY > map.layers[i].height then
+								elseif locY > map.layers[i].height - map.locOffsetY then
 									locY = locY - map.layers[i].height
 								end
 							end
@@ -12028,16 +14768,16 @@ M2.createMTE = function()
 						local locX, locY = x, y
 						for i = 1, #map.layers, 1 do
 							if layerWrapX[i] then
-								if locX < 1 then
+								if locX < 1 - map.locOffsetX then
 									locX = locX + map.layers[i].width
-								elseif locX > map.layers[i].width then
+								elseif locX > map.layers[i].width - map.locOffsetX then
 									locX = locX - map.layers[i].width
 								end
 							end
 							if layerWrapY[i] then
-								if locY < 1 then
+								if locY < 1 - map.locOffsetY then
 									locY = locY + map.layers[i].height
-								elseif locY > map.layers[i].height then
+								elseif locY > map.layers[i].height - map.locOffsetY then
 									locY = locY - map.layers[i].height
 								end
 							end
@@ -12297,24 +15037,28 @@ M2.createMTE = function()
 		--Tint tiles
 		for key,value in pairs(tintingTiles) do
 			local tile = tintingTiles[key]
-			tile.currentColor[1] = tile.currentColor[1] - tile.deltaTint[1][1]
-			tile.currentColor[2] = tile.currentColor[2] - tile.deltaTint[2][1]
-			tile.currentColor[3] = tile.currentColor[3] - tile.deltaTint[3][1]
-			for i = 1, 3, 1 do
-				if tile.currentColor[i] > 1 then
-					tile.currentColor[i] = 1
+			if tileObjects[tile.layer][tile.locX] and tileObjects[tile.layer][tile.locX][tile.locY] then
+				tile.currentColor[1] = tile.currentColor[1] - tile.deltaTint[1][1]
+				tile.currentColor[2] = tile.currentColor[2] - tile.deltaTint[2][1]
+				tile.currentColor[3] = tile.currentColor[3] - tile.deltaTint[3][1]
+				for i = 1, 3, 1 do
+					if tile.currentColor[i] > 1 then
+						tile.currentColor[i] = 1
+					end
+					if tile.currentColor[i] < 0 then
+						tile.currentColor[i] = 0
+					end
 				end
-				if tile.currentColor[i] < 0 then
-					tile.currentColor[i] = 0
+				tile:setFillColor(tile.currentColor[1], tile.currentColor[2], tile.currentColor[3])
+				table.remove(tile.deltaTint[1], 1)
+				table.remove(tile.deltaTint[2], 1)
+				table.remove(tile.deltaTint[3], 1)
+				if not tile.deltaTint[1][1] then
+					tile.deltaTint = nil
+					tintingTiles[tile] = nil
 				end
-			end
-			tile:setFillColor(tile.currentColor[1], tile.currentColor[2], tile.currentColor[3])
-			table.remove(tile.deltaTint[1], 1)
-			table.remove(tile.deltaTint[2], 1)
-			table.remove(tile.deltaTint[3], 1)
-			if not tile.deltaTint[1][1] then
-				tile.deltaTint = nil
-				tintingTiles[tile] = nil
+			else
+				tintingTiles[key] = nil
 			end
 		end
 		
@@ -12440,6 +15184,7 @@ M2.createMTE = function()
 	end
 	
 	M.refresh = function()
+		
 		M.setMapProperties(map.properties)
 		for i = 1, #map.layers, 1 do
 			M.setLayerProperties(i, map.layers[i].properties)
@@ -12447,7 +15192,9 @@ M2.createMTE = function()
 		for i = 1, #map.layers, 1 do
 			for locX = masterGroup[i].vars.camera[1], masterGroup[i].vars.camera[3], 1 do
 				for locY = masterGroup[i].vars.camera[2], masterGroup[i].vars.camera[4], 1 do
+					--print(locX, locY)
 					updateTile2({locX = locX, locY = locY, layer = i, tile = -1})
+					cullLargeTile(locX, locY, i, true)
 				end
 			end
 			masterGroup[i].vars.camera = nil
@@ -12611,11 +15358,11 @@ M2.createMTE = function()
 				object.deltaX = easingHelper(distanceX, parameters.time, parameters.easing)
 				movingSprites[parameters.sprite] = #object.deltaX
 			else
-				if parameters.levelPosX > map.layers[layer].width * map.tilewidth and constrain[3] then
-					parameters.levelPosX = map.layers[layer].width * map.tilewidth
+				if parameters.levelPosX > map.layers[layer].width * map.tilewidth - (map.locOffsetX * map.tilewidth) and constrain[3] then
+					parameters.levelPosX = map.layers[layer].width * map.tilewidth - (map.locOffsetX * map.tilewidth)
 				end
-				if parameters.levelPosX < 0 and constrain[1] then
-					parameters.levelPosX = 0
+				if parameters.levelPosX < 0 - (map.locOffsetX * map.tilewidth) and constrain[1] then
+					parameters.levelPosX = 0 - (map.locOffsetX * map.tilewidth)
 				end
 				local distanceX = parameters.levelPosX - (object.levelPosX or object.x)
 				object.deltaX = easingHelper(distanceX, parameters.time, parameters.easing)
@@ -12633,11 +15380,11 @@ M2.createMTE = function()
 				object.deltaY = easingHelper(distanceY, parameters.time, parameters.easing)
 				movingSprites[parameters.sprite] = #object.deltaY
 			else
-				if parameters.levelPosY > map.layers[layer].height * map.tileheight and constrain[4] then
-					parameters.levelPosY = map.layers[layer].height * map.tileheight
+				if parameters.levelPosY > map.layers[layer].height * map.tileheight - (map.locOffsetY * map.tileheight) and constrain[4] then
+					parameters.levelPosY = map.layers[layer].height * map.tileheight - (map.locOffsetY * map.tileheight)
 				end
-				if parameters.levelPosY < 0 and constrain[2] then
-					parameters.levelPosY = 0
+				if parameters.levelPosY < 0 - (map.locOffsetY * map.tileheight) and constrain[2] then
+					parameters.levelPosY = 0 - (map.locOffsetY * map.tileheight)
 				end
 				local distanceY = parameters.levelPosY - (object.levelPosY or object.y)
 				object.deltaY = easingHelper(distanceY, parameters.time, parameters.easing)
@@ -12678,6 +15425,11 @@ M2.createMTE = function()
 		end
 		for i = 1, #map.layers, 1 do
 			if (i == parameters.layer or not parameters.layer) and check then
+				local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
+				local cameraX, cameraY = masterGroup[i]:contentToLocal(tempX, tempY)
+				local cameraLocX = math.ceil(cameraX / map.tilewidth)
+				local cameraLocY = math.ceil(cameraY / map.tileheight)	
+				
 				if not parameters.time or parameters.time < 1 then
 					parameters.time = 1
 				end
@@ -12699,10 +15451,14 @@ M2.createMTE = function()
 				if parameters.locY then
 					levelPosY = parameters.locY * map.tileheight - (map.tileheight / 2)
 				end				
-				local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
-				local cameraX, cameraY = masterGroup[i]:contentToLocal(tempX, tempY)
-				local cameraLocX = math.ceil(cameraX / map.tilewidth)
-				local cameraLocY = math.ceil(cameraY / map.tileheight)				
+				
+				if not levelPosX then
+					levelPosX = cameraX
+				end
+				if not levelPosY then
+					levelPosY = cameraY
+				end
+					
 				if not layerWrapX[i] then
 					endX = levelPosX
 					distanceX = endX - cameraX
@@ -12710,9 +15466,9 @@ M2.createMTE = function()
 					deltaX[i] = easingHelper(distanceX, time, parameters.transition)
 				else
 					local tempPosX = levelPosX
-					if tempPosX > map.layers[i].width * map.tilewidth then
+					if tempPosX > map.layers[i].width * map.tilewidth - (map.locOffsetX * map.tilewidth) then
 						tempPosX = tempPosX - map.layers[i].width * map.tilewidth
-					elseif tempPosX < 1 then
+					elseif tempPosX < 1 - (map.locOffsetX * map.tilewidth) then
 						tempPosX = tempPosX + map.layers[i].width * map.tilewidth
 					end			
 					local tempPosX2 = tempPosX
@@ -12802,7 +15558,7 @@ M2.createMTE = function()
 		)
 	end
 	
-	M.cancelSpriteMove = function(sprite)
+	M.cancelSpriteMove = function(sprite, onComplete)
 		if movingSprites[sprite] then
 			local object = sprite
 			object.isMoving = false
@@ -12810,12 +15566,17 @@ M2.createMTE = function()
 			object.deltaY = nil
 			movingSprites[sprite] = nil
 			if object.onComplete then
-				local event = { name = "spriteMoveComplete", sprite = object}
-				object.onComplete(event)
-				object.onComplete = nil
+				if onComplete == nil or onComplete == true then
+					local event = { name = "spriteMoveComplete", sprite = object}
+					object.onComplete(event)
+					object.onComplete = nil
+				else
+					object.onComplete = nil
+				end
 			end
 		end
 	end
+
 	
 	M.cancelCameraMove = function(layer)
 		if refMove or not layer then
@@ -12893,10 +15654,10 @@ M2.createMTE = function()
 			rightParam = parameters.levelPos[3]
 			bottomParam = parameters.levelPos[4]
 		else
-			leftParam = 0
-			topParam = 0
-			rightParam = map.width * map.tilewidth
-			bottomParam = map.height * map.tileheight
+			leftParam = 0 - (map.locOffsetX * map.tilewidth)
+			topParam = 0 - (map.locOffsetY * map.tileheight)
+			rightParam = (map.width - map.locOffsetX) * map.tilewidth
+			bottomParam = (map.height - map.locOffsetY) * map.tileheight
 		end		
 		local layer = parameters.layer
 		local xA = parameters.xAlign or "center"
@@ -13039,7 +15800,7 @@ M2.createMTE = function()
 						end						
 						for i = 1, #map.layers, 1 do
 							if not masterGroup[i].vars.constrainLayer then
-								if map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
+								if map.layers[i].toggleParallax == true or map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
 									masterGroup[i].vars.alignment = {xA, yA}
 								end								
 								constrainLeft[i] = nil
@@ -13320,7 +16081,7 @@ M2.createMTE = function()
 						end						
 						for i = 1, #map.layers, 1 do
 							if not masterGroup[i].vars.constrainLayer then
-								if map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
+								if map.layers[i].toggleParallax == true or map.layers[i].parallaxX ~= 1 or map.layers[i].parallaxY ~= 1 then
 									masterGroup[i].vars.alignment = {xA, yA}
 								end								
 								constrainLeft[i] = nil
@@ -13354,10 +16115,10 @@ M2.createMTE = function()
 					local layer = parameters.layer
 					if not override[layer] then
 						masterGroup[layer].vars.constrainLayer = true						
-						constrainLeft[i] = nil
-						constrainTop[i] = nil
-						constrainRight[i] = nil
-						constrainBottom[i] = nil						
+						constrainLeft[layer] = nil
+						constrainTop[layer] = nil
+						constrainRight[layer] = nil
+						constrainBottom[layer] = nil						
 						if leftParam then
 							constrainLeft[layer] = leftParam
 						end
@@ -13503,7 +16264,7 @@ M2.createMTE = function()
 	end
 	
 	M.alignParallaxLayer = function(layer, xAlign, yAlign)
-		if map.layers[layer].parallaxX ~= 1 and map.layers[layer].parallaxY ~= 1 then
+		if map.layers[layer].parallaxX ~= 1 or map.layers[layer].parallaxY ~= 1 or map.layers[layer].toggleParallax == true then
 			if map.orientation == 1 then
 				local tempX, tempY = masterGroup.parent:localToContent(screenCenterX, screenCenterY)
 				local cameraX, cameraY = masterGroup[refLayer]:contentToLocal(tempX, tempY)
@@ -13559,10 +16320,10 @@ M2.createMTE = function()
 				right = bottomRightT[1] - (map.tilewidth / 2)
 				bottom = bottomLeftT[2] - (map.tileheight / 2)				
 				local leftConstraint, topConstraint, rightConstraint, bottomConstraint
-				leftConstraint = 0 + (cameraX - left)
-				topConstraint = 0 + (cameraY - top)
-				rightConstraint = (map.width * map.tilewidth) - (right - cameraX)
-				bottomConstraint = (map.height * map.tileheight) - (bottom - cameraY)				
+				leftConstraint = (0 - (map.locOffsetX * map.tilewidth)) + (cameraX - left)
+				topConstraint = (0 - (map.locOffsetY * map.tileheight)) + (cameraY - top)
+				rightConstraint = ((map.width - map.locOffsetX) * map.tilewidth) - (right - cameraX)
+				bottomConstraint = ((map.height - map.locOffsetY) * map.tileheight) - (bottom - cameraY)				
 				if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
 					local temp = (leftConstraint + rightConstraint) / 2
 					leftConstraint = temp
@@ -13585,27 +16346,27 @@ M2.createMTE = function()
 				masterGroup[layer].vars.alignment = {xA, yA}
 				local levelPosX, levelPosY
 				if xA == "center" then
-					local adjustment1 = ((map.width * map.tilewidth * 0.5) * map.layers[layer].properties.scaleX) - (map.width * map.tilewidth * 0.5)
-					local adjustment2 = (cameraX - (map.width * map.tilewidth * 0.5)) - ((cameraX - (map.width * map.tilewidth * 0.5)) * map.layers[layer].parallaxX)
+					local adjustment1 = (((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[layer].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+					local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[layer].parallaxX)
 					levelPosX = ((cameraX + adjustment1) - adjustment2)
 				elseif xA == "left" then
 					local adjustment = (cameraX - leftConstraint) - ((cameraX - leftConstraint) * map.layers[layer].parallaxX)
 					levelPosX = (cameraX - adjustment)
 				elseif xA == "right" then
-					local adjustment1 = ((map.width * map.tilewidth) * map.layers[layer].properties.scaleX) - (map.width * map.tilewidth)
+					local adjustment1 = (((map.width - map.locOffsetX) * map.tilewidth) * map.layers[layer].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
 					local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[layer].parallaxX)
 					levelPosX = ((cameraX + adjustment1) - adjustment2)
 				end
 				
 				if yA == "center" then
-					local adjustment1 = ((map.height * map.tileheight * 0.5) * map.layers[layer].properties.scaleY) - (map.height * map.tileheight * 0.5)
-					local adjustment2 = (cameraY - (map.height * map.tileheight * 0.5)) - ((cameraY - (map.height * map.tileheight * 0.5)) * map.layers[layer].parallaxY)
+					local adjustment1 = (((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[layer].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+					local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[layer].parallaxY)
 					levelPosY = ((cameraY + adjustment1) - adjustment2)
 				elseif yA == "top" then
 					local adjustment = (cameraY - topConstraint) - ((cameraY - topConstraint) * map.layers[layer].parallaxY)
 					levelPosY = (cameraY - adjustment)
 				elseif yA == "bottom" then
-					local adjustment1 = ((map.height * map.tileheight) * map.layers[layer].properties.scaleY) - (map.height * map.tileheight)
+					local adjustment1 = (((map.height - map.locOffsetY) * map.tileheight) * map.layers[layer].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
 					local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[layer].parallaxY)
 					levelPosY = ((cameraY + adjustment1) - adjustment2)
 				end					
@@ -13677,10 +16438,10 @@ M2.createMTE = function()
 					bottom = bottomLeft[2]
 				end			
 				local leftConstraint, topConstraint, rightConstraint, bottomConstraint
-				leftConstraint = 0 + (cameraX - left)
-				topConstraint = 0 + (cameraY - top)
-				rightConstraint = (map.width * map.tilewidth) - (right - cameraX)
-				bottomConstraint = (map.height * map.tileheight) - (bottom - cameraY)				
+				leftConstraint = (0 - (map.locOffsetX * map.tilewidth)) + (cameraX - left)
+				topConstraint = (0 - (map.locOffsetY * map.tileheight)) + (cameraY - top)
+				rightConstraint = ((map.width - map.locOffsetX) * map.tilewidth) - (right - cameraX)
+				bottomConstraint = ((map.height - map.locOffsetY) * map.tileheight) - (bottom - cameraY)				
 				if (leftConstraint and rightConstraint) and (leftConstraint > rightConstraint) then
 					local temp = (leftConstraint + rightConstraint) / 2
 					leftConstraint = temp
@@ -13694,32 +16455,34 @@ M2.createMTE = function()
 				local xA = xAlign or "center"
 				local yA = yAlign or "center"
 				masterGroup[layer].vars.alignment = {xA, yA}
+				--[[
 				local destinationX, destinationY = masterGroup[layer].x * -1, masterGroup[layer].y * -1
 				if xA == "center" then
-					local adjustment1 = ((map.width * map.tilewidth * 0.5) * map.layers[layer].properties.scaleX) - (map.width * map.tilewidth * 0.5)
-					local adjustment2 = (cameraX - (map.width * map.tilewidth * 0.5)) - ((cameraX - (map.width * map.tilewidth * 0.5)) * map.layers[layer].parallaxX)
+					local adjustment1 = (((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5)) * map.layers[layer].properties.scaleX) - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))
+					local adjustment2 = (cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) - ((cameraX - ((map.width * map.tilewidth * 0.5) - (map.locOffsetX * map.tilewidth * 0.5))) * map.layers[layer].parallaxX)
 					destinationX = ((cameraX + adjustment1) - adjustment2)
 				elseif xA == "left" then
 					local adjustment = (cameraX - leftConstraint) - ((cameraX - leftConstraint) * map.layers[layer].parallaxX)
 					destinationX = (cameraX - adjustment)
 				elseif xA == "right" then
-					local adjustment1 = ((map.width * map.tilewidth) * map.layers[layer].properties.scaleX) - (map.width * map.tilewidth)
+					local adjustment1 = (((map.width - map.locOffsetX) * map.tilewidth) * map.layers[layer].properties.scaleX) - ((map.width - map.locOffsetX) * map.tilewidth)
 					local adjustment2 = (cameraX - rightConstraint) - ((cameraX - rightConstraint) * map.layers[layer].parallaxX)
 					destinationX = ((cameraX + adjustment1) - adjustment2)
 				end				
 				if yA == "center" then
-					local adjustment1 = ((map.height * map.tileheight * 0.5) * map.layers[layer].properties.scaleY) - (map.height * map.tileheight * 0.5)
-					local adjustment2 = (cameraY - (map.height * map.tileheight * 0.5)) - ((cameraY - (map.height * map.tileheight * 0.5)) * map.layers[layer].parallaxY)
+					local adjustment1 = (((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5)) * map.layers[layer].properties.scaleY) - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))
+					local adjustment2 = (cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) - ((cameraY - ((map.height * map.tileheight * 0.5) - (map.locOffsetY * map.tileheight * 0.5))) * map.layers[layer].parallaxY)
 					destinationY = ((cameraY + adjustment1) - adjustment2)
 				elseif yA == "top" then
 					local adjustment = (cameraY - topConstraint) - ((cameraY - topConstraint) * map.layers[layer].parallaxY)
 					destinationY = (cameraY - adjustment)
 				elseif yA == "bottom" then
-					local adjustment1 = ((map.height * map.tileheight) * map.layers[layer].properties.scaleY) - (map.height * map.tileheight)
+					local adjustment1 = (((map.height - map.locOffsetY) * map.tileheight) * map.layers[layer].properties.scaleY) - ((map.height - map.locOffsetY) * map.tileheight)
 					local adjustment2 = (cameraY - bottomConstraint) - ((cameraY - bottomConstraint) * map.layers[layer].parallaxY)
 					destinationY = ((cameraY + adjustment1) - adjustment2)
 				end				
 				M.moveCameraTo({levelPosX = destinationX, levelPosY = destinationY, time = 1, layer = layer, disableParallax = true})
+				]]--
 			end
 		end
 	end
@@ -13997,15 +16760,6 @@ M2.createMTE = function()
 					masterGroup[i]:removeSelf()
 					masterGroup[i] = nil
 				end
-			else
-				for i = 1, map.height + map.width + #map.layers, 1 do
-					for j = 1, #map.layers, 1 do
-						masterGroup[i].layers[j]:removeSelf()
-						masterGroup[i].layers[j] = nil
-					end
-					masterGroup[i]:removeSelf()
-					masterGroup[i] = nil
-				end
 			end
 		else
 			for i = masterGroup.numChildren, 1, -1 do
@@ -14020,6 +16774,10 @@ M2.createMTE = function()
 				for j = masterGroup[i].numChildren, 1, -1 do
 					if masterGroup[i][j].isDepthBuffer then
 						for k = masterGroup[i][j].numChildren, 1, -1 do
+							for m = masterGroup[i][j][k].numChildren, 1, -1 do
+								masterGroup[i][j][k][m]:removeSelf()
+								masterGroup[i][j][k][m] = nil
+							end
 							masterGroup[i][j][k]:removeSelf()
 							masterGroup[i][j][k] = nil
 						end
@@ -14177,7 +16935,7 @@ M2.createMTE = function()
 		debugLoading.text = debugText
 		debugLoading:toFront()
 	end
- 
+ 	
 	M.addPropertyListener = function(name, listener)
 		propertyListeners[name] = true
 		masterGroup:addEventListener(name, listener)
@@ -14379,7 +17137,7 @@ M2.createMTE = function()
 						if not perlinOutputH then
 							map.heightMap = {}
 							for x = 1, map.width, 1 do
-								map.heightMap[x] = {}
+								map.heightMap[x - map.locOffsetX] = {}
 							end
 							perlinOutputH = map.heightMap
 						end
@@ -14388,7 +17146,7 @@ M2.createMTE = function()
 						if not perlinOutputH then
 							map.layers[parameters.heightMap.layer].heightMap = {}
 							for x = 1, map.width, 1 do
-								map.layers[parameters.heightMap.layer].heightMap[x] = {}
+								map.layers[parameters.heightMap.layer].heightMap[x - map.locOffsetX] = {}
 							end
 							perlinOutputH = map.layers[parameters.heightMap.layer].heightMap
 						end
@@ -14448,7 +17206,7 @@ M2.createMTE = function()
 						if not perlinOutputL then
 							map.perlinLighting = {}
 							for x = 1, map.width, 1 do
-								map.perlinLighting[x] = {}
+								map.perlinLighting[x - map.locOffsetX] = {}
 							end
 							perlinOutputL = map.perlinLighting
 						end
@@ -14457,7 +17215,7 @@ M2.createMTE = function()
 						if not perlinOutputL then
 							map.layers[parameters.lighting.layer].perlinLighting = {}
 							for x = 1, map.width, 1 do
-								map.layers[parameters.lighting.layer].perlinLighting[x] = {}
+								map.layers[parameters.lighting.layer].perlinLighting[x - map.locOffsetX] = {}
 							end
 							perlinOutputL = map.layers[parameters.lighting.layer].perlinLighting
 						end

@@ -1,9 +1,6 @@
 module (..., package.seeall)
 
-local utils = require("classes.utils")
-local fireTimer
-local aimlocal
-local currentWeapon
+-----------------------------------------------------------------------
 
 setAim = function(aim)
     aimlocal = aim
@@ -13,11 +10,15 @@ getAim = function()
     return aimlocal
 end
 
-setCW = function(cw)
-    currentWeapon = cw
-end
+-- setLaser = function(laser)
+--     laserlocal = laser
+-- end
 
-speed = utils.getShootSpeed()
+-- getLaser = function()
+--     return laserlocal
+-- end
+
+-----------------------------------------------------------------------
  
 --[[
 ----------------------------------------------------------------
@@ -127,6 +128,9 @@ function NewLeftStick( Props )
 				
                 aimlocal.x = Obj.x
                 aimlocal.y = Obj.y
+
+                -- laserlocal.x = Obj.x
+                -- laserlocal.y = Obj.y
         end
 		
 		---------------------------------------------
@@ -257,6 +261,13 @@ function NewLeftStick( Props )
 end
 
 function NewRightStick( Props )
+
+        -----------------------------------------------------------------------
+
+        local utils = require("classes.utils")
+        local fireTimer
+
+        -----------------------------------------------------------------------
  
         local Group         = display.newGroup()
         Group.x             = Props.x
@@ -363,7 +374,12 @@ function NewRightStick( Props )
                         T.x0 = ex - T.x
                         T.y0 = ey - T.y
 
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                        local speed = utils.getShootSpeed()
                         fireTimer = timer.performWithDelay( speed, utils.shoot, 0 )
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
  
                 elseif T.isFocus then
                         if "moved" == phase then

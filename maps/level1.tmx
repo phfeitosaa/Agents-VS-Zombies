@@ -682,124 +682,124 @@
   <properties>
    <property name="spriteLayer" value="true"/>
   </properties>
-  <object id="6" x="434.042" y="743.875" width="57.4167" height="123.917">
+  <object id="6" name="sceneObject" x="434.042" y="743.875" width="57.4167" height="123.917">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="7" x="1552.67" y="434" width="58.5833" height="186">
+  <object id="7" name="sceneObject" x="1552.67" y="434" width="58.5833" height="186">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="23" x="496.667" y="957.333" width="61.3333" height="33.3333">
+  <object id="23" name="sceneObject" x="496.667" y="957.333" width="61.3333" height="33.3333">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="26" x="625.333" y="944" width="106.667" height="34.6667">
+  <object id="26" name="sceneObject" x="625.333" y="944" width="106.667" height="34.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="28" x="757.333" y="876" width="34.6667" height="44">
+  <object id="28" name="sceneObject" x="757.333" y="876" width="34.6667" height="44">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="29" x="566.667" y="876" width="38.6667" height="44">
+  <object id="29" name="sceneObject" x="566.667" y="876" width="38.6667" height="44">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="30" x="629.333" y="816" width="42.6667" height="38.6667">
+  <object id="30" name="sceneObject" x="629.333" y="816" width="42.6667" height="38.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="31" x="692" y="817.333" width="40" height="37.3333">
+  <object id="31" name="sceneObject" x="692" y="817.333" width="40" height="37.3333">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
   </object>
-  <object id="35" x="873.833" y="622" width="51.75" height="52">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-   <ellipse/>
-  </object>
-  <object id="41" x="1505" y="442.5" width="43.25" height="106">
-   <properties>
-    <property name="physics" value="true"/>
-    <property name="solid" value="true"/>
-   </properties>
-  </object>
-  <object id="42" x="170.667" y="169.333" width="30.6667" height="30.6667">
+  <object id="35" name="sceneObject" x="873.833" y="622" width="51.75" height="52">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="43" x="107.333" y="728.667" width="30.6667" height="30.6667">
+  <object id="41" name="sceneObject" x="1505" y="442.5" width="43.25" height="106">
+   <properties>
+    <property name="physics" value="true"/>
+    <property name="solid" value="true"/>
+   </properties>
+  </object>
+  <object id="42" name="sceneObject" x="170.667" y="169.333" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="44" x="356.424" y="1163.21" width="30.6667" height="30.6667">
+  <object id="43" name="sceneObject" x="107.333" y="728.667" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="45" x="1285.64" y="1162.45" width="30.6667" height="30.6667">
+  <object id="44" name="sceneObject" x="356.424" y="1163.21" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="46" x="1037.15" y="107.879" width="30.6667" height="30.6667">
+  <object id="45" name="sceneObject" x="1285.64" y="1162.45" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="47" x="1781.61" y="46.303" width="30.6667" height="30.6667">
+  <object id="46" name="sceneObject" x="1037.15" y="107.879" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="48" x="1967.48" y="417.97" width="30.6667" height="30.6667">
+  <object id="47" name="sceneObject" x="1781.61" y="46.303" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="49" x="1844.27" y="913.97" width="30.6667" height="30.6667">
+  <object id="48" name="sceneObject" x="1967.48" y="417.97" width="30.6667" height="30.6667">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="50" x="1126.55" y="562.294" width="46.8328" height="45.3333" rotation="8.38585">
+  <object id="49" name="sceneObject" x="1844.27" y="913.97" width="30.6667" height="30.6667">
+   <properties>
+    <property name="physics" value="true"/>
+    <property name="solid" value="true"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="50" name="sceneObject" x="1126.55" y="562.294" width="46.8328" height="45.3333" rotation="8.38585">
    <properties>
     <property name="physics" value="true"/>
     <property name="solid" value="true"/>
