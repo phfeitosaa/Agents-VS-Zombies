@@ -92,7 +92,7 @@ function scene:create( event )
 			fontSize = 45,
 			onRelease = function()
 				sounds.play('tap')
-				--composer.gotoScene('levels.level1', {time = 500, effect = 'slideLeft'})
+				composer.gotoScene('scenes.preferences', {time = 500, effect = 'slideLeft'})
 			end
 		}
 	)

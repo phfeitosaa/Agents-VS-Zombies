@@ -19,7 +19,7 @@ end
 function getShootSpeed()
 
 	if (currentWeapon == "handgun") then
-		return 300
+		return 400
 	end
 	if (currentWeapon == "rifle") then
 		return 100
@@ -51,5 +51,16 @@ function die()
 	background.y = 0 + display.screenOriginY
 	
 	sounds.stop()
-	sounds.playStream("lose")
+	sounds.playStream("die")
+end
+
+function showBlood()
+		
+		bloodSplash = display.newImageRect( "images/ui/blood.png", display.actualContentWidth, display.actualContentHeight )
+		bloodSplash.anchorX = 0
+		bloodSplash.anchorY = 0
+		bloodSplash.x = 0 + display.screenOriginX 
+		bloodSplash.y = 0 + display.screenOriginY
+
+		transition.fadeOut( bloodSplash, { time=2000, delay=300 } )
 end

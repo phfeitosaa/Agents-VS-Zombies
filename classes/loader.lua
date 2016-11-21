@@ -126,14 +126,14 @@ loader.newAim = function()
 		locX = 17,
 		locY = 10,
 		offsetX = 13,
-		offsetY = -600
+		offsetY = -800
 	}
 	mte.addSprite(aim, setup)
 	return aim
 end
 
 loader.newBullet = function()
-	local spriteSheet = graphics.newImageSheet("images/ui/bullet.png", {width = 5, height = 95, numFrames = 1})
+	local spriteSheet = graphics.newImageSheet("images/ui/bullet2.png", {width = 5, height = 560, numFrames = 1})
 	local sequenceData = {{name = "default", frames = {1}, time = 400}}
 	local bullet = display.newSprite(spriteSheet, sequenceData)
 	local setup = {
@@ -142,9 +142,9 @@ loader.newBullet = function()
 		locX = 17,
 		locY = 10,
 		offsetX = 12,
-		offsetY = -120
+		offsetY = -360
 	}
-	mte.physics.addBody( bullet, "dynamic" )
+	mte.physics.addBody( bullet, "static" )
 	mte.addSprite(bullet, setup)
 	return bullet
 end

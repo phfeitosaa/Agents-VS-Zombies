@@ -63,11 +63,11 @@ local laserName = "laser"
 -- Variaveis globais:
 mRandom = math.random
 mFloor = math.floor
-numZombies1 = 30
+numZombies1 = 50
 zombie1Name = "zombie1"
-numZombies2 = 20
+numZombies2 = 30
 zombie2Name = "zombie2"
-numZombies3 = 10
+numZombies3 = 20
 zombie3Name = "zombie3"
 zombieBossName = "zombieBoss"
 
@@ -83,13 +83,13 @@ local numBulletsActual = 0
 
 -- Atributos da handgun:
 handgun.damage = 10
-handgun.numBulletsMax = 60
-handgun.numBulletsActual = 60
+handgun.numBulletsMax = 200
+handgun.numBulletsActual = 200
 
 -- Atributos do rifle:
 rifle.damage = 20
-rifle.numBulletsMax = 200
-rifle.numBulletsActual = 200
+rifle.numBulletsMax = 400
+rifle.numBulletsActual = 400
 
 -- Atributos da shotgun:
 shotgun.damage = 50
@@ -188,28 +188,7 @@ local function followPath(obj)
 		transition.to(obj, {time=obj.speed, x=pos.x, y=pos.y, onComplete=followPath})
 		obj.idx = obj.idx + 1
 	else
-		emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
-		emitter.x = centerX
-		emitter.y = centerY
-
-		sounds.play("exp")
-
 		display.remove( obj )
-
-		bloodSplash = display.newImageRect( "images/ui/blood.png", display.actualContentWidth, display.actualContentHeight )
-		bloodSplash.anchorX = 0
-		bloodSplash.anchorY = 0
-		bloodSplash.x = 0 + display.screenOriginX 
-		bloodSplash.y = 0 + display.screenOriginY
-
-		transition.fadeOut( bloodSplash, { time=2000, delay=300 } )
-
-		-- Damage Caracter:
-		if(currentHealth > 0) then 
-			updateHealthBar(obj.hit)
-			sounds.playPainSnd()
-			currentHealth = currentHealth - 10
-		end
 	end
 end
 
@@ -248,6 +227,8 @@ end
 
 local function makeZombie1()
 
+	sounds.play('zombie')
+
 	player.xGrid = player.locX
 	player.yGrid = player.locY
 
@@ -257,8 +238,10 @@ local function makeZombie1()
 	local yGrid = zombie1.locY
 
 	zombie1.speed = 500
+	zombie1.rotation = 180
 	zombie1.myName = zombie1Name
 	zombie1.hit = 10
+	zombie1.life = 10
 
 	goMapping(zombie1, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
@@ -266,6 +249,8 @@ local function makeZombie1()
 end
 
 local function makeZombie2()
+
+	sounds.play('zombie')
 
 	player.xGrid = player.locX
 	player.yGrid = player.locY
@@ -276,8 +261,10 @@ local function makeZombie2()
 	local yGrid = zombie2.locY
 
 	zombie2.speed = 600
+	zombie2.rotation = 90
 	zombie2.myName = zombie2Name
 	zombie2.hit = 20
+	zombie2.life = 20
 
 	goMapping(zombie2, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
@@ -285,6 +272,8 @@ local function makeZombie2()
 end
 
 local function makeZombie3()
+
+	sounds.play('zombie')
 
 	player.xGrid = player.locX
 	player.yGrid = player.locY
@@ -295,8 +284,10 @@ local function makeZombie3()
 	local yGrid = zombie3.locY
 
 	zombie3.speed = 900
+	zombie3.rotation = 180
 	zombie3.myName = zombie3Name
 	zombie3.hit = 20
+	zombie3.life = 30
 
 	goMapping(zombie3, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
@@ -310,11 +301,14 @@ local function makeZombieBoss()
 
 	local zombieBoss = loader.newZombieBoss()
 	zombieBoss.myName = zombieBossName
+	zombieBoss.rotation = 90
 	local xGrid = zombieBoss.locX
 	local yGrid = zombieBoss.locY
 
 	zombieBoss.speed = 1200
 	zombieBoss.myName = zombieBossName
+	zombieBoss.hit = 100
+	zombieBoss.life = 200
 
 	goMapping(zombieBoss, {x=xGrid, y=yGrid}, {x=player.xGrid, y=player.yGrid})
 	
@@ -343,7 +337,7 @@ end
 
 function LeftStick( event )
 	mte.update()	
-    LeftStick:move(player, 3, false) -- se a opção for true o objeto rotaciona com o joystick
+    LeftStick:move(player, 4, false) -- se a opção for true o objeto rotaciona com o joystick
 
 end
 
@@ -360,27 +354,6 @@ function RightStick( event )
 	RightStick:rotate(player, true)
 	RightStick:rotate(aim, true)
 	-- RightStick:rotate(laser, true)
-end
-
-
-function onCollision(event)
-	if(event.object1.myName =="player" and event.object2.myName =="zombieBoss") then
-		--print("zombie1 Collision!")
-
-		-- Damage Caracter:
-		if(currentHealth > 0) then 
-			updateHealthBar(100)
-			currentHealth = currentHealth - 100
-		end
-	end
-
-	if(event.object1.myName == "player" and event.object2.myName == "bullet") then
-		--print("COLISAO COM A BALA")
-	end
-
-	if(event.object1.myName == "zombie1" and event.object2.myName == "bullet") then
-		--print("COLISAO COM ZOMBIE 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	end
 end
 
 --==============================================================
@@ -404,6 +377,7 @@ function updateHealthBar(damageTaken)
 		numZombies1 = 0
 		numZombies2 = 0
 		numZombies3 = 0
+		currentHealth = 0
 	end
 end
 
@@ -508,14 +482,25 @@ function updateNumBullets(numBActual, weapon)
 	end
 end
 
+function setHandgunSeq()
+	player:setSequence("handgun")
+	player.bodyType = "dynamic"
+end
+
+function setRifleSeq()
+	player:setSequence("rifle")
+	player.bodyType = "dynamic"
+end
+
 function handgunShoot()
 
 	if handgun.numBulletsActual > 0 then
 		sounds.play('pistol')
-		--player:setSequence( "handgunfire" )
+		player.bodyType = "static"
+		player:setSequence( "handgunfire" )
 		
 		handgun.numBulletsActual = handgun.numBulletsActual - 1
-		print(handgun.numBulletsActual)
+		--print(handgun.numBulletsActual)
 		local bullet = loader.newBullet()
 		bullet.myName = "bullet"
 		bullet.x = player.x
@@ -524,6 +509,8 @@ function handgunShoot()
 		transition.moveTo( bullet, { x=aim.x, y=aim.y, time=10, rotation=aim.rotation, onComplete=destroyBullet } )
 
 		updateNumBullets(handgun.numBulletsActual, "handgun")
+
+		timer.performWithDelay(70, setHandgunSeq)
 		
 	elseif handgun.numBulletsActual == 0 then
 		sounds.play('noAmmo')
@@ -534,16 +521,21 @@ end
 function rifleShoot()
 	if rifle.numBulletsActual > 0 then
 		sounds.play('rifle')
+		player.bodyType = "static"
+		player:setSequence( "riflefire" )
+
 		rifle.numBulletsActual = rifle.numBulletsActual - 1
-		print(rifle.numBulletsActual)
+		--print(rifle.numBulletsActual)
 		local bullet = loader.newBullet()
 		bullet.myName = "bullet"
 		bullet.x = player.x
 		bullet.y = player.y
 		bullet.rotation = aim.rotation
-		transition.moveTo( bullet, { x=aim.x, y=aim.y, time=10, rotation=aim.rotation, onComplete=destroyBullet } )
+		transition.moveTo( bullet, { x=aim.x, y=aim.y, time=5, rotation=aim.rotation, onComplete=destroyBullet } )
 
 		updateNumBullets(rifle.numBulletsActual, "rifle")
+
+		timer.performWithDelay(70, setRifleSeq)
 		
 	elseif rifle.numBulletsActual == 0 then
 		sounds.play('noAmmo')
@@ -554,7 +546,7 @@ function shotgunShoot()
 	if shotgun.numBulletsActual > 0 then
 		sounds.play('shotgun')
 		shotgun.numBulletsActual = shotgun.numBulletsActual - 1
-		print(shotgun.numBulletsActual)
+		--print(shotgun.numBulletsActual)
 		local bullet = loader.newBullet()
 		bullet.myName = "bullet"
 		bullet.x = player.x
@@ -566,6 +558,239 @@ function shotgunShoot()
 		
 	elseif shotgun.numBulletsActual == 0 then
 		sounds.play('noAmmo')
+	end
+end
+
+function onCollision(event)
+
+	-- ====================================================================================================
+	-- Se colisão entre player e zombies:
+	-- ====================================================================================================
+
+	if(event.object1.myName =="player" and event.object2.myName =="zombie1") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object2.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object2.hit
+		end
+
+		event.object2:removeSelf()
+
+	elseif(event.object1.myName =="player" and event.object2.myName =="zombie2") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object2.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object2.hit
+		end
+
+		event.object2:removeSelf()
+
+	elseif(event.object1.myName =="player" and event.object2.myName =="zombie3") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object2.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object2.hit
+		end
+
+		event.object2:removeSelf()
+
+	elseif(event.object1.myName =="player" and event.object2.myName =="zombieBoss") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object2.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object2.hit
+		end
+
+		event.object2:removeSelf()
+
+	end
+
+	-- ==============================================================================================
+	-- Colisão entre zombies e player:
+	-- ==============================================================================================
+
+	if(event.object1.myName =="zombie1" and event.object2.myName =="player") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object1.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object1.hit
+		end
+
+		event.object1:removeSelf()
+
+	elseif(event.object1.myName =="zombie2" and event.object2.myName =="player") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object1.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object1.hit
+		end
+
+		event.object1:removeSelf()
+
+	elseif(event.object1.myName =="zombie3" and event.object2.myName =="player") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object1.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object1.hit
+		end
+
+		event.object1:removeSelf()
+
+	elseif(event.object1.myName =="zombieBoss" and event.object2.myName =="player") then
+
+		-- Damage Caracter:
+		if(currentHealth > 0) then 
+			updateHealthBar(event.object1.hit)
+			sounds.playPainSnd()
+			sounds.play("exp")
+
+			emitter = loader.newEmitter( "libs/emitters/explosion.rg", "libs/emitters/particle.png")
+			emitter.x = centerX
+			emitter.y = centerY
+
+			utils.showBlood()
+			currentHealth = currentHealth - event.object1.hit
+		end
+
+		event.object1:removeSelf()
+
+	end
+
+	-- ========================================================================================================
+	-- Colisão zombies e bala:
+	-- ========================================================================================================
+
+	if(event.object1.myName == "zombie1" and event.object2.myName == "bullet") then
+		print("COLISAO ZOMBIE 1 E BALA")
+		if (event.object1.life > 0) then
+			event.object1.life = event.object1.life - 10
+		elseif (event.object1.life == 0) then
+			event.object1:removeSelf()
+		end
+
+	elseif(event.object1.myName == "zombie2" and event.object2.myName == "bullet") then
+		print("COLISAO ZOMBIE 2 E BALA")
+		if (event.object1.life > 0) then
+			event.object1.life = event.object1.life - 10
+		elseif (event.object1.life == 0) then
+			event.object1:removeSelf()
+		end
+
+	elseif(event.object1.myName == "zombie3" and event.object2.myName == "bullet") then
+		print("COLISAO ZOMBIE 3 E BALA")
+		if (event.object1.life > 0) then
+			event.object1.life = event.object1.life - 10
+		elseif (event.object1.life == 0) then
+			event.object1:removeSelf()
+		end
+
+	elseif(event.object1.myName == "zombieBoss" and event.object2.myName == "bullet") then
+		print("COLISAO ZOMBIEBOSS E BALA")
+		if (event.object1.life > 0) then
+			event.object1.life = event.object1.life - 10
+		elseif (event.object1.life == 0) then
+			event.object1:removeSelf()
+		end
+	end
+
+	--=========================================================================================================
+	-- Colisão bala e zombies:
+	--=========================================================================================================
+
+	if(event.object1.myName == "bullet" and event.object2.myName == "zombie1") then
+		print("COLISAO ZOMBIE 1 E BALA")
+		if (event.object2.life > 0) then
+			event.object2.life = event.object2.life - 10
+		elseif (event.object2.life == 0) then
+			event.object2:removeSelf()
+		end
+
+	elseif(event.object1.myName == "bullet" and event.object2.myName == "zombie2") then
+		print("COLISAO ZOMBIE 2 E BALA")
+		if (event.object2.life > 0) then
+			event.object2.life = event.object2.life - 10
+		elseif (event.object2.life == 0) then
+			event.object2:removeSelf()
+		end
+
+	elseif(event.object1.myName == "bullet" and event.object2.myName == "zombie3") then
+		print("COLISAO ZOMBIE 3 E BALA")
+		if (event.object2.life > 0) then
+			event.object2.life = event.object2.life - 10
+		elseif (event.object2.life == 0) then
+			event.object2:removeSelf()
+		end
+
+	elseif(event.object1.myName == "bullet" and event.object2.myName == "zombieBoss") then
+		print("COLISAO ZOMBIEBOSS E BALA")
+		if (event.object2.life > 0) then
+			event.object2.life = event.object2.life - 10
+		elseif (event.object2.life == 0) then
+			event.object2:removeSelf()
+		end
 	end
 end
 
@@ -759,7 +984,6 @@ function scene:show( event )
 
 		mte.physics.start()
 		sounds.playStream('game_music')
-		--sounds.play('pain')
 
 		-- e.g. start timers, begin animation, play audio, etc.
 	end

@@ -200,7 +200,7 @@ function NewLeftStick( Props )
                                 T.x       = Cos( Rad(S.angle-90) ) * (S.maxDist * S.percent) 
                                 T.y       = Sin( Rad(S.angle-90) ) * (S.maxDist * S.percent)
 
-                                mte.zoom(0.6, 1000, easing.outQuad) 
+                                mte.zoom(0.6, 1300, easing.outQuad) 
                         
                         elseif "ended"== phase or "cancelled" == phase then
 								Group.beingMoved = false 
@@ -212,7 +212,7 @@ function NewLeftStick( Props )
                                 S.Timer = timer.performWithDelay( 33, S.onRelease, 0 )
                                 S.Timer.MyStick = S
                                 
-                                mte.zoom(0.8, 1000, easing.outQuad)
+                                mte.zoom(0.8, 1300, easing.outQuad)
                                 
                         end
                 end

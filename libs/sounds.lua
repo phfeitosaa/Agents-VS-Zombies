@@ -22,9 +22,9 @@ local sounds = {
 	pain3 = 'sounds/pain3.wav',
 	pain4 = 'sounds/pain4.wav',
 	pain5 = 'sounds/pain5.wav',
-	lose = 'sounds/lose.wav',
-	exp = 'sounds/exp2.flac'
-	--exp = 'sounds/exp.ogg'
+	zombie = 'sounds/zombie.wav',
+	exp = 'sounds/exp.flac',
+	die = 'sounds/die.mp3'
 }
 
 -- Reserve two channels for streams and switch between them with a nice fade out / fade in transition
@@ -39,7 +39,7 @@ function _M.playStream(sound, force)
     if currentStreamSound == sound and not force then return end
     audio.fadeOut({channel = audioChannel, time = 1000})
     audioChannel, otherAudioChannel = otherAudioChannel, audioChannel
-    audio.setVolume(0.5, {channel = audioChannel})
+    audio.setVolume(0.7, {channel = audioChannel})
     audio.play(audio.loadStream(sound), {channel = audioChannel, loops = -1, fadein = 1000})
     currentStreamSound = sound
 end
