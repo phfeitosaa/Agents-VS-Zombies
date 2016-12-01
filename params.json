@@ -1,0 +1,6 @@
+{
+  "name": "Agents-vs-zombies",
+  "tagline": "Projeto da disciplina de Estágio 1 - Jogo mobile desenvolvido na plataforma Corona SDK",
+  "body": " <h3>Agents VS Zombies</h3>\r\n\r\n<h5>Jogo mobile desenvolvido utilizando a plataforma Corona SDK.</h5>\r\n<br>\r\nFontes:\r\n\r\n- Assets, sprites e efeitos sonoros baixados em:\r\n\r\nhttp://kenney.nl/<br>\r\nhttp://opengameart.org/\r\n\r\n- Biblioteca utilizada para implementar o joystick:\r\n\r\nhttps://github.com/dantes2023/virtual-joystick-with-example\r\n\r\n- Biblioteca utilizada para implementar o pathfinder: \r\n\r\nhttps://github.com/Yonaba/Jumper\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
